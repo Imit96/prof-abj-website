@@ -11,6 +11,10 @@ const ContactTab: React.FC = () => {
   const [contactContent, setContactContent] = useState<ContactContent | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [formData, setFormData] = useState<ContactContent>({
+    contactInfo: [],
+    officeLocations: []
+  });
 
   useEffect(() => {
     fetchContactContent();
@@ -50,6 +54,20 @@ const ContactTab: React.FC = () => {
     } finally {
       setUpdating(false);
     }
+  };
+
+  const handleAddContactInfo = () => {
+    setFormData(prev => ({
+      ...prev,
+      contactInfo: [
+        ...prev.contactInfo,
+        {
+          title: '',
+          iconName: 'Mail',
+          details: ['']
+        }
+      ]
+    }));
   };
 
   // Function to render the appropriate icon based on iconName

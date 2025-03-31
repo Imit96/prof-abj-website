@@ -11,6 +11,12 @@ const FoundationTab: React.FC = () => {
   const [foundationContent, setFoundationContent] = useState<FoundationContent | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [formData, setFormData] = useState<FoundationContent>({
+    mission: '',
+    programs: [],
+    impactStats: [],
+    upcomingEvents: []
+  });
 
   useEffect(() => {
     fetchFoundationContent();
@@ -21,6 +27,7 @@ const FoundationTab: React.FC = () => {
     try {
       const content = await getFoundationContent();
       setFoundationContent(content);
+      setFormData(content);
     } catch (error) {
       console.error('Error fetching foundation content:', error);
       toast.error('Failed to load foundation content');
@@ -42,6 +49,7 @@ const FoundationTab: React.FC = () => {
     try {
       await updateFoundationContent(updatedContent);
       setFoundationContent(updatedContent);
+      setFormData(updatedContent);
       toast.success('Foundation content updated successfully');
       setIsEditing(false);
     } catch (error) {
@@ -50,6 +58,21 @@ const FoundationTab: React.FC = () => {
     } finally {
       setUpdating(false);
     }
+  };
+
+  const handleAddProgram = () => {
+    setFormData(prev => ({
+      ...prev,
+      programs: [
+        ...prev.programs,
+        {
+          title: '',
+          description: '',
+          beneficiaries: '',
+          iconName: 'Heart'
+        }
+      ]
+    }));
   };
 
   // Function to render the appropriate icon based on iconName
@@ -69,7 +92,7 @@ const FoundationTab: React.FC = () => {
   if (isEditing) {
     return (
       <FoundationForm
-        foundationContent={foundationContent || undefined}
+        foundationContent={formData}
         onSubmit={handleSubmit}
         onCancel={handleCancel}
         isLoading={updating}

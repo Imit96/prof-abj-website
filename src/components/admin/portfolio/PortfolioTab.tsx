@@ -1,26 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { getPortfolioContent, updatePortfolioContent } from '../../../services/contentService';
-import Spinner from '../../ui/Spinner';
-import { File, Award, FlaskConical } from 'lucide-react';
-import toast from 'react-hot-toast';
-import PortfolioForm from './PortfolioForm';
+import { Plus, Trash2, Edit2 } from 'lucide-react';
 import { PortfolioContent } from '../../../types/contentTypes';
+import { getPortfolioContent, updatePortfolioContent } from '../../../services/contentService';
+import PortfolioForm from './PortfolioForm';
+import { toast } from 'react-hot-toast';
 
 const PortfolioTab: React.FC = () => {
-  const [loading, setLoading] = useState(true);
-  const [portfolioContent, setPortfolioContent] = useState<PortfolioContent | null>(null);
+  const [content, setContent] = useState<PortfolioContent | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [updating, setUpdating] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchPortfolioContent();
+    fetchContent();
   }, []);
 
-  const fetchPortfolioContent = async () => {
-    setLoading(true);
+  const fetchContent = async () => {
     try {
-      const content = await getPortfolioContent();
-      setPortfolioContent(content);
+      const data = await getPortfolioContent();
+      setContent(data);
     } catch (error) {
       console.error('Error fetching portfolio content:', error);
       toast.error('Failed to load portfolio content');
@@ -29,147 +26,87 @@ const PortfolioTab: React.FC = () => {
     }
   };
 
-  const handleEdit = () => {
-    setIsEditing(true);
-  };
-
-  const handleCancel = () => {
-    setIsEditing(false);
-  };
-
-  const handleSubmit = async (updatedContent: PortfolioContent) => {
-    setUpdating(true);
+  const handleSave = async (updatedContent: PortfolioContent) => {
     try {
       await updatePortfolioContent(updatedContent);
-      setPortfolioContent(updatedContent);
-      toast.success('Portfolio content updated successfully');
+      setContent(updatedContent);
       setIsEditing(false);
+      toast.success('Portfolio content updated successfully');
     } catch (error) {
       console.error('Error updating portfolio content:', error);
       toast.error('Failed to update portfolio content');
-    } finally {
-      setUpdating(false);
     }
   };
 
   if (loading) {
-    return (
-      <div className="w-full flex justify-center p-8">
-        <Spinner size="lg" />
-      </div>
-    );
+    return <div>Loading...</div>;
   }
 
   if (isEditing) {
     return (
       <PortfolioForm
-        portfolioContent={portfolioContent || undefined}
-        onSubmit={handleSubmit}
-        onCancel={handleCancel}
-        isLoading={updating}
+        content={content}
+        onSave={handleSave}
+        onCancel={() => setIsEditing(false)}
       />
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="text-xl font-serif font-bold">Portfolio Content</h3>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Portfolio Content</h2>
         <button
-          onClick={handleEdit}
-          className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark transition-colors"
+          onClick={() => setIsEditing(true)}
+          className="flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark transition-colors"
         >
+          <Edit2 className="w-4 h-4 mr-2" />
           Edit Content
         </button>
       </div>
 
-      {portfolioContent ? (
-        <div className="space-y-8">
-          <div className="space-y-4">
-            <div className="flex items-center">
-              <File className="text-primary mr-2" size={20} />
-              <h4 className="text-lg font-medium">Publications</h4>
-            </div>
-            <div className="border p-4 rounded-md">
-              {portfolioContent.publications && portfolioContent.publications.length > 0 ? (
-                <div className="space-y-4">
-                  {portfolioContent.publications.map((pub, index) => (
-                    <div key={index} className="pb-3 border-b last:border-0">
-                      <h5 className="font-medium">{pub.title}</h5>
-                      <p className="text-sm text-text-light">
-                        {pub.authors} ({pub.year})
-                      </p>
-                      <p className="text-sm italic">{pub.journal}</p>
-                      {pub.doi && (
-                        <p className="text-xs text-primary mt-1">DOI: {pub.doi}</p>
+      {content?.sections.map((section, sectionIndex) => (
+        <div key={sectionIndex} className="bg-white p-6 rounded-lg shadow-sm">
+          <h3 className="text-xl font-semibold mb-4">{section.title}</h3>
+          {section.description && (
+            <p className="text-text-light mb-4">{section.description}</p>
+          )}
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {section.subsections
+              .sort((a, b) => a.order - b.order)
+              .map((subsection, subIndex) => (
+                <div key={subIndex} className="bg-background-alt p-4 rounded-lg">
+                  <h4 className="font-medium mb-2">{subsection.title}</h4>
+                  <p className="text-text-light">{subsection.content}</p>
+                  {subsection.metadata && (
+                    <div className="mt-2 text-sm text-text-light">
+                      {subsection.type === 'publication' && (
+                        <>
+                          <p>Authors: {subsection.metadata.authors}</p>
+                          <p>Journal: {subsection.metadata.journal}</p>
+                          <p>Year: {subsection.metadata.year}</p>
+                          {subsection.metadata.doi && (
+                            <p>DOI: {subsection.metadata.doi}</p>
+                          )}
+                        </>
+                      )}
+                      {subsection.type === 'project' && (
+                        <p>Period: {subsection.metadata.period}</p>
+                      )}
+                      {subsection.type === 'award' && (
+                        <>
+                          <p>Organization: {subsection.metadata.organization}</p>
+                          <p>Year: {subsection.metadata.year}</p>
+                        </>
                       )}
                     </div>
-                  ))}
+                  )}
                 </div>
-              ) : (
-                <p className="text-text-light text-sm">No publications added yet</p>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center">
-              <FlaskConical className="text-primary mr-2" size={20} />
-              <h4 className="text-lg font-medium">Research Projects</h4>
-            </div>
-            <div className="border p-4 rounded-md">
-              {portfolioContent.researchProjects && portfolioContent.researchProjects.length > 0 ? (
-                <div className="space-y-4">
-                  {portfolioContent.researchProjects.map((project, index) => (
-                    <div key={index} className="pb-3 border-b last:border-0">
-                      <div className="flex justify-between">
-                        <h5 className="font-medium">{project.title}</h5>
-                        <span className="text-sm text-text-light">{project.period}</span>
-                      </div>
-                      <p className="text-sm mt-1">{project.description}</p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-text-light text-sm">No research projects added yet</p>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center">
-              <Award className="text-primary mr-2" size={20} />
-              <h4 className="text-lg font-medium">Awards & Recognition</h4>
-            </div>
-            <div className="border p-4 rounded-md">
-              {portfolioContent.awards && portfolioContent.awards.length > 0 ? (
-                <div className="space-y-4">
-                  {portfolioContent.awards.map((award, index) => (
-                    <div key={index} className="pb-3 border-b last:border-0">
-                      <h5 className="font-medium">{award.title}</h5>
-                      <p className="text-sm">
-                        {award.organization}, {award.year}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-text-light text-sm">No awards added yet</p>
-              )}
-            </div>
+              ))}
           </div>
         </div>
-      ) : (
-        <div className="text-center py-6">
-          <p className="text-text-light mb-4">No portfolio content has been added yet</p>
-          <button
-            onClick={handleEdit}
-            className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark transition-colors"
-          >
-            Add Content
-          </button>
-        </div>
-      )}
+      ))}
     </div>
   );
 };
