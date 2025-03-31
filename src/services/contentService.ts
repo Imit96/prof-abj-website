@@ -1,21 +1,3 @@
-import { 
-  collection, 
-  doc, 
-  getDoc, 
-  getDocs, 
-  updateDoc, 
-  deleteDoc, 
-  query, 
-  where, 
-  orderBy,
-  addDoc
-} from 'firebase/firestore';
-import { 
-  ref, 
-  uploadBytes, 
-  getDownloadURL
-} from 'firebase/storage';
-import { db, storage } from '../firebase/config';
 import {
   Publication,
   GalleryItem,
@@ -27,147 +9,175 @@ import {
   ContactContent
 } from '../types/contentTypes';
 
-// Collection names
-const COLLECTIONS = {
-  PUBLICATIONS: 'publications',
-  GALLERY: 'gallery',
-  PROFILE: 'profile',
-  EVENTS: 'events',
-  PORTFOLIO_CONTENT: 'portfolioContent',
-  COOPERATION_CONTENT: 'cooperationContent',
-  FOUNDATION_CONTENT: 'foundationContent',
-  CONTACT_CONTENT: 'contactContent'
-};
-
-// Helper functions
-const getCollection = async (collectionName: string, constraints: any = {}) => {
-  const collectionRef = collection(db, collectionName);
-  let q = query(collectionRef);
-  
-  if (constraints.whereField && constraints.whereValue) {
-    q = query(q, where(constraints.whereField, '==', constraints.whereValue));
+// Mock data
+const mockPublications: Publication[] = [
+  {
+    id: '1',
+    title: 'Sample Publication',
+    authors: 'Author 1, Author 2',
+    year: 2024,
+    journal: 'Sample Journal',
+    doi: '10.1234/sample',
+    abstract: 'Sample abstract text'
   }
-  
-  if (constraints.orderByField) {
-    q = query(q, orderBy(constraints.orderByField, constraints.orderByDirection || 'asc'));
+];
+
+const mockGalleryItems: GalleryItem[] = [
+  {
+    id: '1',
+    title: 'Sample Image',
+    description: 'Sample description',
+    imageUrl: '/images/sample.jpg',
+    category: 'general',
+    order: 1
   }
-  
-  const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+];
+
+const mockProfile: ProfileInfo = {
+  id: '1',
+  name: 'Sample Name',
+  title: 'Sample Title',
+  bio: 'Sample bio text',
+  imageUrl: '/images/profile.jpg',
+  education: [
+    {
+      degree: 'PhD',
+      institution: 'Sample University',
+      year: '2020',
+      description: 'Sample education description'
+    }
+  ],
+  experience: [
+    {
+      position: 'Professor',
+      institution: 'Sample University',
+      startYear: '2020',
+      endYear: 'Present',
+      description: 'Sample experience description'
+    }
+  ],
+  awards: [
+    {
+      title: 'Sample Award',
+      organization: 'Sample Organization',
+      year: '2023',
+      description: 'Sample award description'
+    }
+  ]
 };
 
-const getDocument = async (collectionName: string, id: string) => {
-  const docRef = doc(db, collectionName, id);
-  const docSnap = await getDoc(docRef);
-  return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } : null;
+const mockEvents: Event[] = [
+  {
+    id: '1',
+    title: 'Sample Event',
+    description: 'Sample event description',
+    startDate: new Date().toISOString(),
+    location: 'Sample Location'
+  }
+];
+
+const mockPortfolioContent: PortfolioContent = {
+  id: 'main',
+  sections: [
+    {
+      id: '1',
+      title: 'Sample Section',
+      description: 'Sample section description',
+      iconName: 'sample-icon',
+      subsections: [
+        {
+          id: '1',
+          title: 'Sample Subsection',
+          content: 'Sample content',
+          type: 'text',
+          order: 1
+        }
+      ],
+      order: 1
+    }
+  ]
 };
 
-const uploadFile = async (path: string, file: File) => {
-  const storageRef = ref(storage, path);
-  const snapshot = await uploadBytes(storageRef, file);
-  const url = await getDownloadURL(snapshot.ref);
-  return { path, url };
+const mockCooperationContent: CooperationContent = {
+  id: 'main',
+  academicCollaborations: [],
+  industryPartnerships: [],
+  researchNetworks: [],
+  collaborationOpportunities: 'Sample opportunities text'
+};
+
+const mockFoundationContent: FoundationContent = {
+  id: 'main',
+  mission: 'Sample mission statement',
+  programs: [],
+  impactStats: [],
+  upcomingEvents: []
+};
+
+const mockContactContent: ContactContent = {
+  id: 'main',
+  contactInfo: [],
+  officeLocations: []
 };
 
 // Publications
 export const getPublications = async () => {
-  return getCollection(COLLECTIONS.PUBLICATIONS, {
-    orderByField: 'year',
-    orderByDirection: 'desc'
-  });
+  return mockPublications;
 };
 
 export const getPublication = async (id: string) => {
-  return getDocument(COLLECTIONS.PUBLICATIONS, id);
+  return mockPublications.find(pub => pub.id === id) || null;
 };
 
 // Gallery
 export const getGalleryItems = async (category?: string) => {
-  const constraints = category 
-    ? { whereField: 'category', whereValue: category, orderByField: 'order' }
-    : { orderByField: 'order' };
-    
-  return getCollection(COLLECTIONS.GALLERY, constraints);
+  if (category) {
+    return mockGalleryItems.filter(item => item.category === category);
+  }
+  return mockGalleryItems;
 };
 
 export const getGalleryItem = async (id: string) => {
-  return getDocument(COLLECTIONS.GALLERY, id);
+  return mockGalleryItems.find(item => item.id === id) || null;
 };
 
 // Profile
 export const getProfile = async () => {
-  // Usually there's only one profile document, so we get all and take the first
-  const profiles = await getCollection(COLLECTIONS.PROFILE);
-  return profiles.length > 0 ? profiles[0] : null;
+  return mockProfile;
 };
 
 // Events
 export const getEvents = async () => {
-  return getCollection(COLLECTIONS.EVENTS, {
-    orderByField: 'startDate',
-    orderByDirection: 'desc'
-  });
+  return mockEvents;
 };
 
 export const getEvent = async (id: string) => {
-  return getDocument(COLLECTIONS.EVENTS, id);
+  return mockEvents.find(event => event.id === id) || null;
 };
 
 // Portfolio Content
 export const getPortfolioContent = async () => {
-  const content = await getDocument(COLLECTIONS.PORTFOLIO_CONTENT, 'main');
-  if (!content) {
-    return {
-      id: 'main',
-      sections: [],
-      updatedAt: new Date()
-    };
-  }
-  return content as PortfolioContent;
+  return mockPortfolioContent;
+};
+
+export const updatePortfolioContent = async (updatedContent: PortfolioContent) => {
+  // In a real application, this would make an API call to update the content
+  // For now, we'll just update the mock data
+  Object.assign(mockPortfolioContent, updatedContent);
+  return mockPortfolioContent;
 };
 
 // Cooperation Content
 export const getCooperationContent = async () => {
-  const content = await getDocument(COLLECTIONS.COOPERATION_CONTENT, 'main');
-  if (!content) {
-    return {
-      id: 'main',
-      academicCollaborations: [],
-      industryPartnerships: [],
-      researchNetworks: [],
-      collaborationOpportunities: '',
-      updatedAt: new Date()
-    };
-  }
-  return content as CooperationContent;
+  return mockCooperationContent;
 };
 
 // Foundation Content
 export const getFoundationContent = async () => {
-  const content = await getDocument(COLLECTIONS.FOUNDATION_CONTENT, 'main');
-  if (!content) {
-    return {
-      id: 'main',
-      mission: '',
-      programs: [],
-      impactStats: [],
-      upcomingEvents: [],
-      updatedAt: new Date()
-    };
-  }
-  return content as FoundationContent;
+  return mockFoundationContent;
 };
 
 // Contact Content
 export const getContactContent = async () => {
-  const content = await getDocument(COLLECTIONS.CONTACT_CONTENT, 'main');
-  if (!content) {
-    return {
-      id: 'main',
-      contactInfo: [],
-      officeLocations: [],
-      updatedAt: new Date()
-    };
-  }
-  return content as ContactContent;
+  return mockContactContent;
 }; 

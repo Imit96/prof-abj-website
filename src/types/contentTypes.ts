@@ -60,23 +60,22 @@ export interface AwardItem {
 }
 
 export interface Event {
-  id?: string;
+  id: string;
   title: string;
   description: string;
-  startDate: Date | FirebaseTimestamp | string;
-  endDate?: Date | FirebaseTimestamp | string;
+  startDate: Date | string;
+  endDate?: Date | string;
   location?: string;
   imageUrl?: string;
-  link?: string;
-  createdAt?: Date | FirebaseTimestamp;
-  updatedAt?: Date | FirebaseTimestamp;
+  category?: string;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
 }
 
-// Define a type for Firebase Timestamp
-export interface FirebaseTimestamp {
-  toDate: () => Date;
-  seconds: number;
-  nanoseconds: number;
+export interface BaseContent {
+  id: string;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
 }
 
 // Update the FeedbackMessage interface
@@ -87,14 +86,14 @@ export interface FeedbackMessage {
   subject: string;
   message: string;
   isRead: boolean;
-  createdAt?: Date | FirebaseTimestamp | string;
+  createdAt?: Date | string;
 }
 
 // Portfolio Page Content Types
 export interface PortfolioContent {
   id?: string;
   sections: PortfolioSection[];
-  updatedAt?: Date | FirebaseTimestamp;
+  updatedAt?: Date | string;
 }
 
 export interface PortfolioSection {
@@ -129,7 +128,7 @@ export interface CooperationContent {
   industryPartnerships: IndustryPartnership[];
   researchNetworks: ResearchNetwork[];
   collaborationOpportunities: string;
-  updatedAt?: Date | FirebaseTimestamp;
+  updatedAt?: Date | string;
 }
 
 export interface AcademicCollaboration {
@@ -160,7 +159,7 @@ export interface FoundationContent {
   programs: FoundationProgram[];
   impactStats: ImpactStat[];
   upcomingEvents: FoundationEvent[];
-  updatedAt?: Date | FirebaseTimestamp;
+  updatedAt?: Date | string;
 }
 
 export interface FoundationProgram {
@@ -189,7 +188,7 @@ export interface ContactContent {
   id?: string;
   contactInfo: ContactInfo[];
   officeLocations: OfficeLocation[];
-  updatedAt?: Date | FirebaseTimestamp;
+  updatedAt?: Date | string;
 }
 
 export interface ContactInfo {
