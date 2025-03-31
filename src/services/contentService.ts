@@ -45,6 +45,59 @@ const COLLECTIONS = {
   CONTACT_CONTENT: 'contactContent'
 };
 
+// Helper functions
+const getCollection = async (collectionName: string, constraints: any = {}) => {
+  const collectionRef = collection(db, collectionName);
+  let q = collectionRef;
+  
+  if (constraints.whereField && constraints.whereValue) {
+    q = query(collectionRef, where(constraints.whereField, '==', constraints.whereValue));
+  }
+  
+  if (constraints.orderByField) {
+    q = query(q, orderBy(constraints.orderByField, constraints.orderByDirection || 'asc'));
+  }
+  
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+};
+
+const getDocument = async (collectionName: string, id: string) => {
+  const docRef = doc(db, collectionName, id);
+  const docSnap = await getDoc(docRef);
+  return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } : null;
+};
+
+const addDocument = async (collectionName: string, data: any) => {
+  const docRef = await addDoc(collection(db, collectionName), {
+    ...data,
+    createdAt: new Date()
+  });
+  return docRef.id;
+};
+
+const updateDocument = async (collectionName: string, id: string, data: any) => {
+  const docRef = doc(db, collectionName, id);
+  await updateDoc(docRef, {
+    ...data,
+    updatedAt: new Date()
+  });
+  return true;
+};
+
+const deleteDocument = async (collectionName: string, id: string) => {
+  const docRef = doc(db, collectionName, id);
+  await deleteDoc(docRef);
+  return true;
+};
+
+const uploadFile = async (path: string, file: File) => {
+  const storageRef = ref(storage, path);
+  const snapshot = await uploadBytes(storageRef, file);
+  const url = await getDownloadURL(snapshot.ref);
+  return { path, url };
+};
+
 // Publications
 export const getPublications = async () => {
   return getCollection(COLLECTIONS.PUBLICATIONS, {

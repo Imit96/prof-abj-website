@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
@@ -15,7 +15,7 @@ const FoundationPage = lazy(() => import('./pages/FoundationPage'));
 const GalleryPage = lazy(() => import('./pages/GalleryPage'));
 const ContactPage = lazy(() => import('./pages/ContactPage'));
 const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'));
-const LoginPage = lazy(() => import('./pages/LoginPage'));
+const LoginPage = lazy(() => import('./pages/AdminLoginPage'));
 
 // Loading spinner component
 const LoadingSpinner = () => (

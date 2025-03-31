@@ -22,6 +22,7 @@ import {
   deleteObject
 } from 'firebase/storage';
 import {
+  getAuth,
   signInWithEmailAndPassword,
   signOut as authSignOut
 } from 'firebase/auth';
@@ -29,6 +30,7 @@ import { app } from './config';
 
 const db = getFirestore(app);
 const storage = getStorage(app);
+const auth = getAuth(app);
 
 // Authentication services
 export const signIn = async (email: string, password: string) => {

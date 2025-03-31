@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getGalleryItems } from '../services/contentService';
 import { GalleryItem } from '../types/contentTypes';
+import { Filter, Loader2, X } from 'lucide-react';
 
 const GalleryPage: React.FC = () => {
   // State for gallery items
@@ -82,7 +83,7 @@ const GalleryPage: React.FC = () => {
         <div className="container mx-auto px-4">
           {isLoading ? (
             <div className="flex justify-center items-center py-20">
-              <Loader className="animate-spin text-primary" size={40} />
+              <Loader2 className="animate-spin text-primary" size={40} />
             </div>
           ) : filteredItems.length === 0 ? (
             <div className="text-center py-12">

@@ -1,10 +1,30 @@
 import { useState, useEffect } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Edit2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { getPortfolioItems, updatePortfolioItem, deletePortfolioItem } from '../../../services/contentService';
-import { PortfolioItem } from '../../../types/contentTypes';
-import { Plus, Edit2 } from 'lucide-react';
+import { getPortfolioContent, updatePortfolioContent } from '../../../services/contentService';
+import { PortfolioContent } from '../../../types/contentTypes';
 import PortfolioForm from './PortfolioForm';
+
+interface Section {
+  title: string;
+  description?: string;
+  subsections: Subsection[];
+}
+
+interface Subsection {
+  title: string;
+  content: string;
+  order: number;
+  type: 'publication' | 'project' | 'award';
+  metadata?: {
+    authors?: string;
+    journal?: string;
+    year?: string;
+    doi?: string;
+    period?: string;
+    organization?: string;
+  };
+}
 
 const PortfolioTab: React.FC = () => {
   const [content, setContent] = useState<PortfolioContent | null>(null);
@@ -66,7 +86,7 @@ const PortfolioTab: React.FC = () => {
         </button>
       </div>
 
-      {content?.sections.map((section, sectionIndex) => (
+      {content?.sections.map((section: Section, sectionIndex: number) => (
         <div key={sectionIndex} className="bg-white p-6 rounded-lg shadow-sm">
           <h3 className="text-xl font-semibold mb-4">{section.title}</h3>
           {section.description && (
@@ -75,8 +95,8 @@ const PortfolioTab: React.FC = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {section.subsections
-              .sort((a, b) => a.order - b.order)
-              .map((subsection, subIndex) => (
+              .sort((a: Subsection, b: Subsection) => a.order - b.order)
+              .map((subsection: Subsection, subIndex: number) => (
                 <div key={subIndex} className="bg-background-alt p-4 rounded-lg">
                   <h4 className="font-medium mb-2">{subsection.title}</h4>
                   <p className="text-text-light">{subsection.content}</p>
