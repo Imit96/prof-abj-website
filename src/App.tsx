@@ -1,21 +1,21 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Suspense } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Suspense, lazy } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { Navbar } from './components/layout/Navbar';
 import { Footer } from './components/layout/Footer';
-import HomePage from './pages/HomePage';
-import AboutPage from './pages/AboutPage';
-import GalleryPage from './pages/GalleryPage';
-import ContactPage from './pages/ContactPage';
-import AdminDashboardPage from './pages/AdminDashboardPage';
-import LoginPage from './pages/AdminLoginPage';
-import ImportGalleryItems from './scripts/importGalleryItems';
-import PopulateGalleryData from './scripts/populateGalleryData';
-import PortfolioPage from './pages/PortfolioPage';
-import CooperationPage from './pages/CooperationPage';
-import FoundationPage from './pages/FoundationPage';
+
+// Lazy load pages
+const HomePage = lazy(() => import('./pages/HomePage'));
+const AboutPage = lazy(() => import('./pages/AboutPage'));
+const PortfolioPage = lazy(() => import('./pages/PortfolioPage'));
+const CooperationPage = lazy(() => import('./pages/CooperationPage'));
+const FoundationPage = lazy(() => import('./pages/FoundationPage'));
+const GalleryPage = lazy(() => import('./pages/GalleryPage'));
+const ContactPage = lazy(() => import('./pages/ContactPage'));
+const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
 
 // Loading spinner component
 const LoadingSpinner = () => (
@@ -46,8 +46,6 @@ function App() {
                   <ProtectedRoute>
                     <Routes>
                       <Route path="dashboard" element={<AdminDashboardPage />} />
-                      <Route path="import-gallery" element={<ImportGalleryItems />} />
-                      <Route path="populate-gallery" element={<PopulateGalleryData />} />
                     </Routes>
                   </ProtectedRoute>
                 }

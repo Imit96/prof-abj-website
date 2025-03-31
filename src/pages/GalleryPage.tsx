@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { Image, X, Filter, Loader } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { getGalleryItems } from '../services/contentService';
 import { GalleryItem } from '../types/contentTypes';
 

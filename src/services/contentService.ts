@@ -1,12 +1,22 @@
-import {
-  addDocument,
-  getDocument,
-  updateDocument,
-  deleteDocument,
-  getCollection,
-  uploadFile,
-  deleteFile
-} from '../firebase/services';
+import { 
+  collection, 
+  doc, 
+  getDoc, 
+  getDocs, 
+  setDoc, 
+  updateDoc, 
+  deleteDoc, 
+  query, 
+  where, 
+  orderBy 
+} from 'firebase/firestore';
+import { 
+  ref, 
+  uploadBytes, 
+  getDownloadURL, 
+  deleteObject 
+} from 'firebase/storage';
+import { db, storage } from '../firebase/config';
 import {
   Publication,
   GalleryItem,

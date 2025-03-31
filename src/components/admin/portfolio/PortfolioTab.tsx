@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Edit2 } from 'lucide-react';
-import { PortfolioContent } from '../../../types/contentTypes';
-import { getPortfolioContent, updatePortfolioContent } from '../../../services/contentService';
-import PortfolioForm from './PortfolioForm';
+import { useState, useEffect } from 'react';
+import { Trash2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { getPortfolioItems, updatePortfolioItem, deletePortfolioItem } from '../../../services/contentService';
+import { PortfolioItem } from '../../../types/contentTypes';
+import { Plus, Edit2 } from 'lucide-react';
+import PortfolioForm from './PortfolioForm';
 
 const PortfolioTab: React.FC = () => {
   const [content, setContent] = useState<PortfolioContent | null>(null);

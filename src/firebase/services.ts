@@ -1,4 +1,5 @@
 import {
+  getFirestore,
   collection,
   addDoc,
   doc,
@@ -14,6 +15,7 @@ import {
   Query
 } from 'firebase/firestore';
 import {
+  getStorage,
   ref,
   uploadBytes,
   getDownloadURL,
@@ -23,7 +25,10 @@ import {
   signInWithEmailAndPassword,
   signOut as authSignOut
 } from 'firebase/auth';
-import { db, auth, storage } from './config';
+import { app } from './config';
+
+const db = getFirestore(app);
+const storage = getStorage(app);
 
 // Authentication services
 export const signIn = async (email: string, password: string) => {
