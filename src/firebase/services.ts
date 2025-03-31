@@ -11,7 +11,6 @@ import {
   where,
   orderBy,
   limit,
-  CollectionReference,
   Query
 } from 'firebase/firestore';
 import {
@@ -27,10 +26,32 @@ import {
   signOut as authSignOut
 } from 'firebase/auth';
 import app from './config';
+import {
+  Publication,
+  GalleryItem,
+  ProfileInfo,
+  Event,
+  PortfolioContent,
+  CooperationContent,
+  FoundationContent,
+  ContactContent
+} from '../types/contentTypes';
 
 const db = getFirestore(app);
 const storage = getStorage(app);
 const auth = getAuth(app);
+
+// Collection names
+const COLLECTIONS = {
+  PUBLICATIONS: 'publications',
+  GALLERY: 'gallery',
+  PROFILE: 'profile',
+  EVENTS: 'events',
+  PORTFOLIO_CONTENT: 'portfolioContent',
+  COOPERATION_CONTENT: 'cooperationContent',
+  FOUNDATION_CONTENT: 'foundationContent',
+  CONTACT_CONTENT: 'contactContent'
+};
 
 // Authentication services
 export const signIn = async (email: string, password: string) => {
@@ -150,47 +171,10 @@ export const getCollection = async (
 // Storage services
 export const uploadFile = async (path: string, file: File) => {
   try {
-    // Create a unique filename to avoid conflicts
-    const uniqueFileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
-    const uniquePath = path; // Use the path directly without appending the filename again
-    const storageRef = ref(storage, uniquePath);
-    
-    // Set metadata to handle CORS
-    const metadata = {
-      contentType: file.type,
-      customMetadata: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Access-Control-Max-Age': '3600'
-      }
-    };
-    
-    // Upload with retry logic
-    let retries = 3;
-    let lastError;
-    
-    while (retries > 0) {
-      try {
-        const snapshot = await uploadBytes(storageRef, file, metadata);
-        const downloadURL = await getDownloadURL(snapshot.ref);
-        
-        return {
-          path: uniquePath,
-          url: downloadURL
-        };
-      } catch (error) {
-        lastError = error;
-        console.error(`Upload attempt ${4 - retries} failed:`, error);
-        retries--;
-        if (retries > 0) {
-          // Wait before retrying
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-      }
-    }
-    
-    throw lastError;
+    const storageRef = ref(storage, path);
+    const snapshot = await uploadBytes(storageRef, file);
+    const url = await getDownloadURL(snapshot.ref);
+    return { path, url };
   } catch (error) {
     console.error('Error uploading file:', error);
     throw error;
@@ -206,4 +190,107 @@ export const deleteFile = async (path: string) => {
     console.error('Error deleting file:', error);
     throw error;
   }
+};
+
+// Publications
+export const getPublications = async () => {
+  return getCollection(COLLECTIONS.PUBLICATIONS, {
+    orderByField: 'year',
+    orderByDirection: 'desc'
+  });
+};
+
+export const getPublication = async (id: string) => {
+  return getDocument(COLLECTIONS.PUBLICATIONS, id);
+};
+
+// Gallery
+export const getGalleryItems = async (category?: string) => {
+  const constraints = category 
+    ? { whereField: 'category', whereValue: category, orderByField: 'order' }
+    : { orderByField: 'order' };
+    
+  return getCollection(COLLECTIONS.GALLERY, constraints);
+};
+
+export const getGalleryItem = async (id: string) => {
+  return getDocument(COLLECTIONS.GALLERY, id);
+};
+
+// Profile
+export const getProfile = async () => {
+  // Usually there's only one profile document, so we get all and take the first
+  const profiles = await getCollection(COLLECTIONS.PROFILE);
+  return profiles.length > 0 ? profiles[0] : null;
+};
+
+// Events
+export const getEvents = async () => {
+  return getCollection(COLLECTIONS.EVENTS, {
+    orderByField: 'startDate',
+    orderByDirection: 'desc'
+  });
+};
+
+export const getEvent = async (id: string) => {
+  return getDocument(COLLECTIONS.EVENTS, id);
+};
+
+// Portfolio Content
+export const getPortfolioContent = async () => {
+  const content = await getDocument(COLLECTIONS.PORTFOLIO_CONTENT, 'main');
+  if (!content) {
+    return {
+      id: 'main',
+      sections: [],
+      updatedAt: new Date()
+    };
+  }
+  return content as PortfolioContent;
+};
+
+// Cooperation Content
+export const getCooperationContent = async () => {
+  const content = await getDocument(COLLECTIONS.COOPERATION_CONTENT, 'main');
+  if (!content) {
+    return {
+      id: 'main',
+      academicCollaborations: [],
+      industryPartnerships: [],
+      researchNetworks: [],
+      collaborationOpportunities: '',
+      updatedAt: new Date()
+    };
+  }
+  return content as CooperationContent;
+};
+
+// Foundation Content
+export const getFoundationContent = async () => {
+  const content = await getDocument(COLLECTIONS.FOUNDATION_CONTENT, 'main');
+  if (!content) {
+    return {
+      id: 'main',
+      mission: '',
+      programs: [],
+      impactStats: [],
+      upcomingEvents: [],
+      updatedAt: new Date()
+    };
+  }
+  return content as FoundationContent;
+};
+
+// Contact Content
+export const getContactContent = async () => {
+  const content = await getDocument(COLLECTIONS.CONTACT_CONTENT, 'main');
+  if (!content) {
+    return {
+      id: 'main',
+      contactInfo: [],
+      officeLocations: [],
+      updatedAt: new Date()
+    };
+  }
+  return content as ContactContent;
 }; 
