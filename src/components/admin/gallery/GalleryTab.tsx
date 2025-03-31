@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { getGalleryItems, addGalleryItem, updateGalleryItem, deleteGalleryItem } from '../../../services/contentService';
 import { GalleryItem } from '../../../types/contentTypes';
+import GalleryForm from './GalleryForm';
 
 const GalleryTab = () => {
   const [items, setItems] = useState<GalleryItem[]>([]);
@@ -39,10 +40,10 @@ const GalleryTab = () => {
     }
   };
 
-  const handleUpdateItem = async (id: string, item: Partial<GalleryItem>) => {
+  const handleUpdateItem = async (id: string, item: Omit<GalleryItem, 'id'>) => {
     try {
-      await updateGalleryItem(id, item);
-      setItems(items.map(i => i.id === id ? { ...i, ...item } : i));
+      await updateGalleryItem(id, { ...item, id });
+      setItems(items.map(i => i.id === id ? { ...item, id } : i));
       setEditingItem(null);
       toast.success('Gallery item updated successfully');
     } catch (err) {
@@ -95,7 +96,7 @@ const GalleryTab = () => {
                   <Edit2 className="w-4 h-4" />
                 </button>
                 <button
-                  onClick={() => handleDeleteItem(item.id)}
+                  onClick={() => item.id && handleDeleteItem(item.id)}
                   className="p-1 bg-white/80 rounded-full hover:bg-white transition-colors"
                 >
                   <Trash2 className="w-4 h-4 text-red-500" />
@@ -115,10 +116,28 @@ const GalleryTab = () => {
       {(isAdding || editingItem) && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-lg font-medium mb-4">
-              {isAdding ? 'Add Gallery Item' : 'Edit Gallery Item'}
-            </h3>
-            {/* Add your form component here */}
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium">
+                {isAdding ? 'Add Gallery Item' : 'Edit Gallery Item'}
+              </h3>
+              <button
+                onClick={() => {
+                  setIsAdding(false);
+                  setEditingItem(null);
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <GalleryForm
+              item={editingItem || undefined}
+              onSave={editingItem?.id ? (item) => handleUpdateItem(editingItem.id as string, item) : handleAddItem}
+              onCancel={() => {
+                setIsAdding(false);
+                setEditingItem(null);
+              }}
+            />
           </div>
         </div>
       )}

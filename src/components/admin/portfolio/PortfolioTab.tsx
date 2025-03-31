@@ -38,7 +38,13 @@ const PortfolioTab: React.FC = () => {
   const fetchContent = async () => {
     try {
       const data = await getPortfolioContent();
-      setContent(data);
+      if (!data) {
+        throw new Error('No portfolio content found');
+      }
+      if (!('sections' in data)) {
+        throw new Error('Invalid portfolio content format');
+      }
+      setContent(data as PortfolioContent);
     } catch (error) {
       console.error('Error fetching portfolio content:', error);
       toast.error('Failed to load portfolio content');

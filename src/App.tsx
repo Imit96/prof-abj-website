@@ -1,10 +1,9 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
 import { Toaster } from 'react-hot-toast';
-import { AuthProvider } from './contexts/AuthContext';
-import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { Navbar } from './components/layout/Navbar';
 import { Footer } from './components/layout/Footer';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
 
 // Lazy load pages
 const HomePage = lazy(() => import('./pages/HomePage'));
@@ -14,8 +13,8 @@ const CooperationPage = lazy(() => import('./pages/CooperationPage'));
 const FoundationPage = lazy(() => import('./pages/FoundationPage'));
 const GalleryPage = lazy(() => import('./pages/GalleryPage'));
 const ContactPage = lazy(() => import('./pages/ContactPage'));
+const AdminLoginPage = lazy(() => import('./pages/AdminLoginPage'));
 const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'));
-const LoginPage = lazy(() => import('./pages/AdminLoginPage'));
 
 // Loading spinner component
 const LoadingSpinner = () => (
@@ -34,19 +33,17 @@ function App() {
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/about" element={<AboutPage />} />
-              <Route path="/gallery" element={<GalleryPage />} />
-              <Route path="/contact" element={<ContactPage />} />
               <Route path="/portfolio" element={<PortfolioPage />} />
               <Route path="/cooperation" element={<CooperationPage />} />
               <Route path="/foundation" element={<FoundationPage />} />
-              <Route path="/admin/login" element={<LoginPage />} />
+              <Route path="/gallery" element={<GalleryPage />} />
+              <Route path="/contact" element={<ContactPage />} />
+              <Route path="/admin/login" element={<AdminLoginPage />} />
               <Route
                 path="/admin/*"
                 element={
                   <ProtectedRoute>
-                    <Routes>
-                      <Route path="dashboard" element={<AdminDashboardPage />} />
-                    </Routes>
+                    <AdminDashboardPage />
                   </ProtectedRoute>
                 }
               />
@@ -55,16 +52,7 @@ function App() {
         </main>
         <Footer />
       </div>
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          duration: 3000,
-          style: {
-            background: '#333',
-            color: '#fff',
-          },
-        }}
-      />
+      <Toaster position="top-right" />
     </Router>
   );
 }

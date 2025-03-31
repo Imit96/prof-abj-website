@@ -8,7 +8,8 @@ import {
   deleteDoc, 
   query, 
   where, 
-  orderBy 
+  orderBy,
+  addDoc
 } from 'firebase/firestore';
 import { 
   ref, 
@@ -48,10 +49,10 @@ const COLLECTIONS = {
 // Helper functions
 const getCollection = async (collectionName: string, constraints: any = {}) => {
   const collectionRef = collection(db, collectionName);
-  let q = collectionRef;
+  let q = query(collectionRef);
   
   if (constraints.whereField && constraints.whereValue) {
-    q = query(collectionRef, where(constraints.whereField, '==', constraints.whereValue));
+    q = query(q, where(constraints.whereField, '==', constraints.whereValue));
   }
   
   if (constraints.orderByField) {
@@ -356,8 +357,17 @@ export const updateFoundationContent = async (content: FoundationContent) => {
 
 // Contact Content
 export const getContactContent = async () => {
-  const content = await getCollection(COLLECTIONS.CONTACT_CONTENT);
-  return content.length > 0 ? content[0] : null;
+  const content = await getDocument(COLLECTIONS.CONTACT_CONTENT, 'main');
+  if (!content) {
+    // Return default contact content if none exists
+    return {
+      id: 'main',
+      contactInfo: [],
+      officeLocations: [],
+      updatedAt: new Date()
+    };
+  }
+  return content as ContactContent;
 };
 
 export const updateContactContent = async (content: ContactContent) => {

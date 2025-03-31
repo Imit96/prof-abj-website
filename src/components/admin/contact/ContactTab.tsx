@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getContactContent, updateContactContent } from '../../../services/contentService';
 import Spinner from '../../ui/Spinner';
-import { Mail, Building } from 'lucide-react';
+import { Mail, Building, Plus, Edit2, Trash2, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ContactForm from './ContactForm';
 import { ContactContent } from '../../../types/contentTypes';
@@ -11,10 +11,6 @@ const ContactTab: React.FC = () => {
   const [contactContent, setContactContent] = useState<ContactContent | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [updating, setUpdating] = useState(false);
-  const [formData, setFormData] = useState<ContactContent>({
-    contactInfo: [],
-    officeLocations: []
-  });
 
   useEffect(() => {
     fetchContactContent();
@@ -56,24 +52,16 @@ const ContactTab: React.FC = () => {
     }
   };
 
-  const handleAddContactInfo = () => {
-    setFormData(prev => ({
-      ...prev,
-      contactInfo: [
-        ...prev.contactInfo,
-        {
-          title: '',
-          iconName: 'Mail',
-          details: ['']
-        }
-      ]
-    }));
-  };
-
   // Function to render the appropriate icon based on iconName
   const renderInfoIcon = (iconName: string) => {
-    // This is a simplified approach. In a real implementation, you'd import and use all the icons
-    return <Mail className="text-primary" size={20} />;
+    switch (iconName) {
+      case 'Mail':
+        return <Mail className="text-primary" size={20} />;
+      case 'Building':
+        return <Building className="text-primary" size={20} />;
+      default:
+        return <Mail className="text-primary" size={20} />;
+    }
   };
 
   if (loading) {
