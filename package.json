@@ -15,6 +15,7 @@
     "prepare": "[ -f .git/hooks/pre-commit ] || cp -f .husky/pre-commit .git/hooks/ 2>/dev/null || true"
   },
   "dependencies": {
+    "@radix-ui/react-tabs": "^1.1.3",
     "@tailwindcss/typography": "^0.5.10",
     "autoprefixer": "^10.4.21",
     "class-variance-authority": "^0.7.1",
