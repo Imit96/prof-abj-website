@@ -292,8 +292,9 @@ export default config({
         title: fields.slug({ name: { label: 'Caption' } }),
         image: fields.image({
           label: 'Photo',
-          directory: 'public/images/gallery',
-          publicPath: '/images/gallery/',
+          // stored under src/assets so Astro resizes and converts every photo at build time
+          directory: 'src/assets/gallery',
+          publicPath: '../../assets/gallery/',
           validation: { isRequired: true },
         }),
         alt: fields.text({ label: 'Describe the photo for screen readers' }),
