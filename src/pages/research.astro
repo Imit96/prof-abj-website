@@ -1,0 +1,180 @@
+---
+import Base from '../layouts/Base.astro';
+import NetworkMap from '../components/NetworkMap.astro';
+import PublicationList from '../components/PublicationList.astro';
+import { getProfile, getThemes, getProjects, getPlaces, getCollaborators } from '../lib/content';
+
+const profile = await getProfile();
+const themes = await getThemes();
+const projects = await getProjects();
+const places = await getPlaces();
+const people = await getCollaborators();
+
+const byRecent = (a: { years: string | null }, b: { years: string | null }) => (b.years ?? '').localeCompare(a.years ?? '');
+const groups = [
+  { key: 'current', title: 'Where he works' },
+  { key: 'partner', title: 'Partner institutions' },
+  { key: 'past', title: 'Where he studied and trained' },
+  { key: 'funder', title: 'Funders and programmes' },
+]
+  .map((g) => ({ ...g, items: places.filter((p) => p.relation === g.key).sort(byRecent) }))
+  .filter((g) => g.items.length);
+
+const years = (p: { start: number | null; end: number | null }) =>
+  p.start ? (p.end && p.end !== p.start ? `${p.start}–${p.end}` : `${p.start}`) : '';
+---
+
+<Base
+  title="Research"
+  description="Research themes, grants, collaborators and the full publication list of Prof. Amos Olalekan Abolaji: Drosophila models of toxicity, Parkinson's disease, cancer and phytochemical protection."
+>
+  <section class="on-dark bg-cuticle pt-32 pb-16 text-bone md:pt-40 md:pb-20">
+    <div class="wrap">
+      <h1 class="max-w-4xl text-4xl md:text-[5.5rem] md:leading-[0.95]">Research</h1>
+      <p class="mt-6 max-w-2xl text-lg text-bone/85">
+        Molecular toxicology, oxidative stress and disease modelling in Drosophila melanogaster and rodents, with a
+        growing focus on cancer.
+      </p>
+      <nav aria-label="On this page" class="mt-12">
+        <ul class="flex flex-wrap gap-2 text-sm font-medium">
+          <li><a class="subnav" href="#themes">Themes</a></li>
+          <li><a class="subnav" href="#projects">Grants and projects</a></li>
+          <li><a class="subnav" href="#network">Collaborators</a></li>
+          <li><a class="subnav" href="#publications">Publications</a></li>
+        </ul>
+      </nav>
+    </div>
+  </section>
+
+  <section id="themes" class="wrap py-20 md:py-28" aria-labelledby="themes-h">
+    <h2 id="themes-h" class="text-2xl md:text-3xl">Themes</h2>
+    <div class="mt-12">
+      {
+        themes.map((t) => (
+          <article class="grid gap-4 border-t border-ink/15 py-9 md:grid-cols-12 md:gap-10">
+            <h3 class="font-display text-xl md:col-span-4 md:text-2xl">{t.title}</h3>
+            <div class="md:col-span-8">
+              <p class="max-w-prose">{t.summary}</p>
+              {t.agents.length > 0 && (
+                <ul class="mt-5 flex flex-wrap gap-2" aria-label="Compounds and exposures studied">
+                  {t.agents.map((a) => (
+                    <li class="rounded-full bg-slide-2 px-3 py-1 text-sm text-ink/80">{a}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </article>
+        ))
+      }
+    </div>
+  </section>
+
+  <section id="projects" class="bg-slide-2/60 py-20 md:py-28" aria-labelledby="projects-h">
+    <div class="wrap">
+      <h2 id="projects-h" class="text-2xl md:text-3xl">Grants and projects</h2>
+      <ol class="mt-12 grid gap-x-12 md:grid-cols-2">
+        {
+          projects.map((pr) => (
+            <li class="border-t border-ink/15 py-7">
+              <p class="text-sm tabular-nums text-mute">{years(pr)}</p>
+              <h3 class="mt-2 font-display text-lg leading-snug md:text-xl">{pr.title}</h3>
+              <p class="mt-2 text-[0.95rem]">
+                {pr.funder}
+                {pr.role && <span class="text-mute">. {pr.role}{pr.lead ? ` with ${pr.lead}` : ''}</span>}
+              </p>
+              {pr.summary && <p class="mt-3 max-w-prose text-mute">{pr.summary}</p>}
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+  </section>
+
+  <section id="network" class="on-dark bg-cuticle py-20 text-bone md:py-28" aria-labelledby="network-h">
+    <div class="wrap">
+      <div class="grid gap-6 md:grid-cols-12">
+        <h2 id="network-h" class="text-2xl md:col-span-5 md:text-3xl">Collaborators and institutions</h2>
+        <p class="max-w-xl text-bone-mute md:col-span-7">
+          The places he has worked and trained, and the people and institutions he works with. The lab also
+          collaborates with groups in Germany and Spain, and trains researchers from across Nigeria.
+        </p>
+      </div>
+
+      <div class="mt-14"><NetworkMap /></div>
+
+      {
+        people.length > 0 && (
+          <div class="mt-20">
+            <h3 class="text-xl md:text-2xl">Collaborators</h3>
+            <ul class="mt-8 grid gap-x-12 md:grid-cols-2">
+              {people.map((c) => (
+                <li class="border-t border-bone/15 py-6">
+                  <p class="font-display text-lg">
+                    {c.url ? <a class="link" href={c.url}>{c.name}</a> : c.name}
+                  </p>
+                  <p class="text-sm text-bone-mute">
+                    {c.institution}
+                    {c.country ? `, ${c.country}` : ''}
+                  </p>
+                  {c.work && <p class="mt-2 max-w-prose text-bone/85">{c.work}</p>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )
+      }
+
+      <div class="mt-20 grid gap-14 lg:grid-cols-2">
+        {
+          groups.map((g) => (
+            <div>
+              <h3 class="text-xl md:text-2xl">{g.title}</h3>
+              <ul class="mt-6">
+                {g.items.map((pl) => (
+                  <li class="border-t border-bone/15 py-5">
+                    <p class="flex flex-wrap items-baseline justify-between gap-x-4">
+                      <span class="font-medium">
+                        {pl.url ? <a class="link" href={pl.url}>{pl.name}</a> : pl.name}
+                      </span>
+                      <span class="text-sm tabular-nums text-bone-mute">{pl.years}</span>
+                    </p>
+                    <p class="text-sm text-bone-mute">
+                      {pl.city}, {pl.country}
+                    </p>
+                    {pl.description && <p class="mt-2 max-w-prose text-[0.95rem] text-bone/85">{pl.description}</p>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <section id="publications" class="wrap py-20 md:py-28" aria-labelledby="pubs-h">
+    <div class="grid gap-6 md:grid-cols-12">
+      <h2 id="pubs-h" class="text-2xl md:col-span-5 md:text-3xl">Publications</h2>
+      <p class="max-w-xl text-mute md:col-span-7">
+        Peer-reviewed articles, reviews, chapters and preprints. The list updates from his{' '}
+        {profile.links.orcid && <a class="link" href={`https://orcid.org/${profile.links.orcid}`}>ORCID record</a>}; citation
+        metrics are on <a class="link" href={profile.links.scholar ?? '#'}>Google Scholar</a>.
+      </p>
+    </div>
+    <div class="mt-12"><PublicationList /></div>
+  </section>
+</Base>
+
+<style>
+  .subnav {
+    display: inline-block;
+    padding: 0.55rem 1rem;
+    border-radius: 999px;
+    box-shadow: inset 0 0 0 1.5px color-mix(in oklab, var(--color-bone) 30%, transparent);
+    transition: background-color 0.2s, color 0.2s;
+  }
+  .subnav:hover {
+    background: var(--color-bone);
+    color: var(--color-cuticle);
+  }
+</style>

@@ -1,0 +1,192 @@
+---
+import { getProfile } from '../lib/content';
+const p = await getProfile();
+const [first, ...rest] = p.name.split(' ');
+const surname = rest.pop() ?? '';
+const given = [first, ...rest].join(' ');
+const m = p.metrics;
+const nf = new Intl.NumberFormat('en-GB');
+---
+
+<section class="hero relative isolate overflow-hidden text-cuticle" aria-labelledby="hero-name">
+  <canvas id="ommatidia" class="absolute inset-0 -z-10 h-full w-full" aria-hidden="true"></canvas>
+
+  <div class="wrap relative grid min-h-[100svh] grid-cols-1 items-end pt-24 md:grid-cols-12 md:pt-16">
+    <div class="relative z-10 -mt-28 pb-12 md:mt-0 md:col-span-7 md:pb-24 lg:col-span-7">
+      <p class="rise font-display text-xl sm:text-2xl md:text-3xl" style="--i:0">Prof. {given}</p>
+      <h1 id="hero-name" class="rise surname -ml-[0.05em] mt-1" style="--i:1">{surname}</h1>
+      <p class="rise mt-10 max-w-xl text-lg font-medium leading-snug md:mt-12" style="--i:2">
+        {p.role}, University of Ibadan
+      </p>
+      <p class="rise mt-4 max-w-xl text-base leading-relaxed text-cuticle/80" style="--i:3">{p.tagline}</p>
+      <div class="rise mt-8 flex flex-wrap gap-3" style="--i:4">
+        <a href="/research" class="btn btn-ink">See the research</a>
+        {p.cv && <a href={p.cv} class="btn btn-line" download>Download CV</a>}
+      </div>
+      {
+        m.publications && (
+          <p class="rise mt-10 max-w-md text-sm text-cuticle/75" style="--i:5">
+            {m.publications} peer-reviewed papers and chapters, cited {nf.format(m.citations ?? 0)} times. h-index{' '}
+            {m.hIndex} on <a class="link" href={p.links.scholar ?? '#'}>Google Scholar</a>, {m.asOf}.
+          </p>
+        )
+      }
+    </div>
+
+    <div class="portrait pointer-events-none relative -mx-4 -mt-24 h-[66svh] sm:-mx-8 md:absolute md:inset-y-0 md:right-0 md:mt-0 md:h-auto md:w-[52%] lg:w-[46%]">
+      <img
+        src={p.portrait ?? '/images/profile/abolaji-portrait.jpg'}
+        alt={`Portrait of Prof. ${p.name}`}
+        width="864"
+        height="1080"
+        fetchpriority="high"
+        class="absolute bottom-0 left-1/2 h-full w-auto max-w-none -translate-x-1/2 object-contain object-bottom md:left-auto md:right-0 md:translate-x-0"
+      />
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero {
+    /* Matches the studio backdrop of the portrait: lit centre falling off to burnt edges */
+    background:
+      radial-gradient(120% 90% at 70% 45%, #cfa769 0%, #c49a55 38%, #a97b3e 75%, #7d5220 100%);
+  }
+  .surname {
+    font-size: clamp(4.5rem, 15vw, 13.5rem);
+    line-height: 0.9;
+    letter-spacing: -0.035em;
+    font-variation-settings: 'opsz' 144, 'SOFT' 30, 'WONK' 1;
+    font-weight: 380;
+  }
+  .portrait img {
+    /* Dissolve the photo's edges into the matching backdrop */
+    /* mobile: photo is full-bleed, so only the bottom edge needs to dissolve */
+    -webkit-mask-image: linear-gradient(to bottom, #000 62%, transparent 96%);
+    mask-image: linear-gradient(to bottom, #000 62%, transparent 96%);
+  }
+  @media (min-width: 768px) {
+    .portrait img {
+      /* desktop: photo is flush with the top and bottom of the hero, so fade the sides */
+      -webkit-mask-image: linear-gradient(to right, transparent 4%, #000 26%, #000 76%, transparent 97%);
+      mask-image: linear-gradient(to right, transparent 4%, #000 26%, #000 76%, transparent 97%);
+    }
+  }
+  @media (max-width: 767px) {
+    .portrait {
+      order: -1;
+    }
+  }
+</style>
+
+<script>
+  /*
+    Compound-eye lattice: a field of hexagonal ommatidia. Each facet catches a little light near the
+    pointer and from a slow travelling sheen. Paused when off-screen; drawn once for reduced motion.
+  */
+  const canvas = document.getElementById('ommatidia') as HTMLCanvasElement | null;
+  if (canvas) {
+    const ctx = canvas.getContext('2d')!;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let w = 0,
+      h = 0,
+      dpr = 1,
+      cells: { x: number; y: number; seed: number }[] = [];
+    const R = 22; // hex radius (px)
+    const pointer = { x: -9999, y: -9999, tx: -9999, ty: -9999 };
+    let running = false,
+      raf = 0,
+      t0 = performance.now();
+
+    const build = () => {
+      const rect = canvas.getBoundingClientRect();
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      w = rect.width;
+      h = rect.height;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      cells = [];
+      const hx = Math.sqrt(3) * R;
+      const vy = 1.5 * R;
+      for (let row = -1, y = 0; y < h + R * 2; row++, y = row * vy) {
+        for (let x = (row % 2) * (hx / 2) - hx; x < w + hx; x += hx) {
+          cells.push({ x, y, seed: Math.random() });
+        }
+      }
+    };
+
+    const hexPath = (x: number, y: number, r: number) => {
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a = (Math.PI / 3) * i - Math.PI / 2;
+        const px = x + r * Math.cos(a),
+          py = y + r * Math.sin(a);
+        i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+      }
+      ctx.closePath();
+    };
+
+    const draw = (now: number) => {
+      const t = (now - t0) / 1000;
+      pointer.x += (pointer.tx - pointer.x) * 0.12;
+      pointer.y += (pointer.ty - pointer.y) * 0.12;
+      ctx.clearRect(0, 0, w, h);
+      for (const c of cells) {
+        const dx = c.x - pointer.x,
+          dy = c.y - pointer.y;
+        const near = Math.exp(-(dx * dx + dy * dy) / (2 * 140 * 140));
+        const sheen = 0.5 + 0.5 * Math.sin(t * 0.6 - c.x * 0.006 + c.y * 0.004);
+        const glow = Math.min(1, near * 0.9 + sheen * 0.12 + c.seed * 0.05);
+        // fade the lattice toward the reading column on the left so text stays legible
+        const fade = Math.min(1, Math.max(0.25, (c.x / w) * 1.6 - 0.1));
+        hexPath(c.x, c.y, R - 1.2);
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = `rgba(103, 60, 17, ${0.16 * fade})`;
+        ctx.stroke();
+        if (glow > 0.04) {
+          const g = ctx.createRadialGradient(c.x - R * 0.25, c.y - R * 0.3, 0, c.x, c.y, R);
+          g.addColorStop(0, `rgba(255, 236, 196, ${0.42 * glow * fade})`);
+          g.addColorStop(1, 'rgba(255, 236, 196, 0)');
+          ctx.fillStyle = g;
+          ctx.fill();
+        }
+      }
+      if (running) raf = requestAnimationFrame(draw);
+    };
+
+    const start = () => {
+      if (running || reduce) return;
+      running = true;
+      raf = requestAnimationFrame(draw);
+    };
+    const stop = () => {
+      running = false;
+      cancelAnimationFrame(raf);
+    };
+
+    build();
+    draw(performance.now());
+    new IntersectionObserver(([e]) => (e.isIntersecting ? start() : stop())).observe(canvas);
+    let resizeTimer = 0;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(() => {
+        build();
+        draw(performance.now());
+      }, 150);
+    });
+    canvas.parentElement!.addEventListener('pointermove', (e) => {
+      const r = canvas.getBoundingClientRect();
+      pointer.tx = e.clientX - r.left;
+      pointer.ty = e.clientY - r.top;
+      if (pointer.x < -999) {
+        pointer.x = pointer.tx;
+        pointer.y = pointer.ty;
+      }
+    });
+    canvas.parentElement!.addEventListener('pointerleave', () => {
+      pointer.tx = pointer.ty = -9999;
+    });
+  }
+</script>

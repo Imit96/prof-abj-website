@@ -1,0 +1,145 @@
+---
+import { getPublications, pubHref, type Publication } from '../lib/content';
+
+const pubs = await getPublications();
+const byYear = new Map<number | string, Publication[]>();
+for (const p of pubs) {
+  const y = p.year ?? 'Undated';
+  if (!byYear.has(y)) byYear.set(y, []);
+  byYear.get(y)!.push(p);
+}
+const kinds = [
+  { value: 'all', label: 'All' },
+  { value: 'article', label: 'Articles' },
+  { value: 'review', label: 'Reviews' },
+  { value: 'chapter', label: 'Chapters' },
+  { value: 'preprint', label: 'Preprints' },
+  { value: 'abstract', label: 'Abstracts' },
+].filter((k) => k.value === 'all' || pubs.some((p) => p.kind === k.value));
+
+/** Bold his name in author lists */
+const markAuthor = (a: string) =>
+  a.replace(/</g, '&lt;').replace(/(Abolaji,?\s*A\.?\s*O\.?|Abolaji AO|Abolaji A\.O\.)/g, '<strong>$1</strong>');
+---
+
+<div class="publist" data-publist>
+  <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <label class="relative block w-full md:max-w-sm">
+      <span class="sr-only">Search publications</span>
+      <input
+        type="search"
+        data-q
+        placeholder="Search titles, journals, authors"
+        class="w-full rounded-full border border-ink/20 bg-white/70 px-5 py-3 text-base placeholder:text-mute focus:border-eye focus:outline-none"
+      />
+    </label>
+    <div class="flex flex-wrap gap-2" role="group" aria-label="Filter by type">
+      {
+        kinds.map((k, i) => (
+          <button
+            type="button"
+            data-kind={k.value}
+            aria-pressed={i === 0 ? 'true' : 'false'}
+            class="chip rounded-full px-4 py-2 text-sm font-medium"
+          >
+            {k.label}
+          </button>
+        ))
+      }
+    </div>
+  </div>
+  <p class="mt-5 text-sm text-mute" aria-live="polite" data-count>{pubs.length} publications</p>
+
+  <div class="mt-6">
+    {
+      [...byYear.entries()].map(([year, items]) => (
+        <section class="year-group grid gap-x-10 border-t border-ink/15 py-6 md:grid-cols-[6rem_1fr]" data-year>
+          <h3 class="font-display text-2xl text-mute md:sticky md:top-24 md:self-start">{year}</h3>
+          <ol class="space-y-6">
+            {items.map((p) => {
+              const href = pubHref(p);
+              return (
+                <li
+                  class="pub"
+                  data-kind={p.kind}
+                  data-text={`${p.title} ${p.authors} ${p.journal} ${p.year ?? ''}`.toLowerCase()}
+                >
+                  <p class="font-display text-lg leading-snug" style="font-variation-settings:'opsz' 24">
+                    {href ? (
+                      <a href={href} class="link" rel="noopener">
+                        {p.title}
+                      </a>
+                    ) : (
+                      p.title
+                    )}
+                  </p>
+                  {p.authors && <p class="mt-1 text-[0.95rem] text-mute" set:html={markAuthor(p.authors)} />}
+                  <p class="mt-1 text-[0.95rem]">
+                    <em>{p.journal}</em>
+                    {p.kind !== 'article' && <span class="ml-2 text-mute">({kinds.find((k) => k.value === p.kind)?.label.replace(/s$/, '') ?? p.kind})</span>}
+                  </p>
+                </li>
+              );
+            })}
+          </ol>
+        </section>
+      ))
+    }
+    <p data-empty class="hidden border-t border-ink/15 py-10 text-mute">
+      No publications match that search. Try a compound name such as "resveratrol", or clear the search.
+    </p>
+  </div>
+</div>
+
+<style>
+  .chip {
+    box-shadow: inset 0 0 0 1.5px color-mix(in oklab, var(--color-ink) 25%, transparent);
+    transition: background-color 0.2s, color 0.2s;
+  }
+  .chip:hover {
+    box-shadow: inset 0 0 0 1.5px var(--color-ink);
+  }
+  .chip[aria-pressed='true'] {
+    background: var(--color-cuticle);
+    color: var(--color-bone);
+    box-shadow: none;
+  }
+  .publist :global(strong) {
+    font-weight: 600;
+    color: var(--color-ink);
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-publist]').forEach((root) => {
+    const q = root.querySelector<HTMLInputElement>('[data-q]')!;
+    const chips = [...root.querySelectorAll<HTMLButtonElement>('button[data-kind]')];
+    const items = [...root.querySelectorAll<HTMLElement>('.pub')];
+    const groups = [...root.querySelectorAll<HTMLElement>('[data-year]')];
+    const count = root.querySelector<HTMLElement>('[data-count]')!;
+    const empty = root.querySelector<HTMLElement>('[data-empty]')!;
+    let kind = 'all';
+
+    const apply = () => {
+      const terms = q.value.toLowerCase().trim().split(/\s+/).filter(Boolean);
+      let n = 0;
+      for (const el of items) {
+        const ok =
+          (kind === 'all' || el.dataset.kind === kind) && terms.every((t) => el.dataset.text!.includes(t));
+        el.hidden = !ok;
+        if (ok) n++;
+      }
+      groups.forEach((g) => (g.hidden = !g.querySelector('.pub:not([hidden])')));
+      count.textContent = `${n} ${n === 1 ? 'publication' : 'publications'}`;
+      empty.classList.toggle('hidden', n > 0);
+    };
+    q.addEventListener('input', apply);
+    chips.forEach((c) =>
+      c.addEventListener('click', () => {
+        kind = c.dataset.kind!;
+        chips.forEach((x) => x.setAttribute('aria-pressed', String(x === c)));
+        apply();
+      }),
+    );
+  });
+</script>

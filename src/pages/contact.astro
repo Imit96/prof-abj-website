@@ -1,0 +1,142 @@
+---
+import Base from '../layouts/Base.astro';
+import { getProfile } from '../lib/content';
+const p = await getProfile();
+const formKey = import.meta.env.PUBLIC_WEB3FORMS_KEY as string | undefined;
+---
+
+<Base title="Contact" description={`Contact Prof. ${p.name} about research collaboration, postgraduate supervision or speaking invitations.`}>
+  <section class="bg-ochre pt-32 pb-16 text-cuticle md:pt-40 md:pb-20">
+    <div class="wrap">
+      <h1 class="text-4xl md:text-[5.5rem] md:leading-[0.95]">Contact</h1>
+      <p class="mt-6 max-w-xl text-lg">For research collaboration, postgraduate supervision, training workshops and speaking invitations.</p>
+    </div>
+  </section>
+
+  <section class="wrap grid gap-16 py-20 md:grid-cols-12 md:py-28">
+    <div class="space-y-10 md:col-span-5">
+      <div>
+        <h2 class="text-xl">Email</h2>
+        <ul class="mt-3 space-y-1">
+          {p.emails.map((e) => <li><a class="link text-lg" href={`mailto:${e}`}>{e}</a></li>)}
+        </ul>
+      </div>
+      {p.showPhone && p.phone && (
+        <div>
+          <h2 class="text-xl">Phone</h2>
+          <p class="mt-3"><a class="link text-lg" href={`tel:${p.phone.replace(/\s/g, '')}`}>{p.phone}</a></p>
+        </div>
+      )}
+      <div>
+        <h2 class="text-xl">Address</h2>
+        <p class="mt-3 whitespace-pre-line text-mute">{p.address}</p>
+      </div>
+      <div>
+        <h2 class="text-xl">Prospective students</h2>
+        <p class="mt-3 max-w-md text-mute">
+          Please include your current degree, the research area that interests you and a short CV. Postgraduate
+          admission is through the University of Ibadan Postgraduate College.
+        </p>
+      </div>
+      <div>
+        <h2 class="text-xl">Profiles</h2>
+        <ul class="mt-3 space-y-1">
+          {p.links.scholar && <li><a class="link" href={p.links.scholar}>Google Scholar</a></li>}
+          {p.links.orcid && <li><a class="link" href={`https://orcid.org/${p.links.orcid}`}>ORCID {p.links.orcid}</a></li>}
+          {p.links.lab && <li><a class="link" href={p.links.lab}>Drosophila Research and Training Centre</a></li>}
+        </ul>
+      </div>
+    </div>
+
+    <div class="md:col-span-7">
+      {formKey ? (
+        <form id="contact-form" class="grid gap-5" action="https://api.web3forms.com/submit" method="POST">
+          <h2 class="text-2xl">Send a message</h2>
+          <input type="hidden" name="access_key" value={formKey} />
+          <input type="hidden" name="subject" value="New message from the website" />
+          <input type="checkbox" name="botcheck" class="hidden" tabindex="-1" autocomplete="off" />
+          <div class="grid gap-5 sm:grid-cols-2">
+            <label class="field">
+              <span>Your name</span>
+              <input name="name" required autocomplete="name" />
+            </label>
+            <label class="field">
+              <span>Email address</span>
+              <input name="email" type="email" required autocomplete="email" />
+            </label>
+          </div>
+          <label class="field">
+            <span>What is it about?</span>
+            <select name="topic">
+              <option>Research collaboration</option>
+              <option>Postgraduate study</option>
+              <option>Training or workshop</option>
+              <option>Speaking invitation</option>
+              <option>Media enquiry</option>
+              <option>Something else</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Message</span>
+            <textarea name="message" rows="7" required></textarea>
+          </label>
+          <div class="flex flex-wrap items-center gap-5">
+            <button type="submit" class="btn btn-ink">Send message</button>
+            <p id="form-status" class="text-mute" role="status" aria-live="polite"></p>
+          </div>
+        </form>
+      ) : (
+        <div class="rounded-2xl bg-slide-2/70 p-8">
+          <h2 class="text-2xl">Send a message</h2>
+          <p class="mt-3 max-w-md text-mute">Email is the quickest way to reach him.</p>
+          <p class="mt-6"><a class="btn btn-ink" href={`mailto:${p.emails[0]}`}>Write an email</a></p>
+        </div>
+      )}
+    </div>
+  </section>
+</Base>
+
+<style>
+  .field {
+    display: grid;
+    gap: 0.4rem;
+    font-weight: 500;
+    font-size: 0.95rem;
+  }
+  .field :is(input, select, textarea) {
+    font: inherit;
+    font-weight: 400;
+    font-size: 1rem;
+    padding: 0.8rem 1rem;
+    border-radius: 0.6rem;
+    border: 1px solid color-mix(in oklab, var(--color-ink) 22%, transparent);
+    background: #fff;
+  }
+  .field :is(input, select, textarea):focus {
+    outline: none;
+    border-color: var(--color-eye);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-eye) 20%, transparent);
+  }
+</style>
+
+<script>
+  const form = document.getElementById('contact-form') as HTMLFormElement | null;
+  const status = document.getElementById('form-status');
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = form.querySelector('button')!;
+    btn.disabled = true;
+    status!.textContent = 'Sending…';
+    try {
+      const res = await fetch(form.action, { method: 'POST', body: new FormData(form), headers: { Accept: 'application/json' } });
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json.message);
+      form.reset();
+      status!.textContent = 'Message sent. You will get a reply by email.';
+    } catch {
+      status!.textContent = 'The message could not be sent. Check your connection and try again, or use the email address on this page.';
+    } finally {
+      btn.disabled = false;
+    }
+  });
+</script>

@@ -1,0 +1,215 @@
+---
+import '../styles/global.css';
+import { getProfile, getNav } from '../lib/content';
+import Footer from '../components/Footer.astro';
+
+interface Props {
+  title?: string;
+  description?: string;
+  /** Header sits over the ochre hero on the homepage */
+  overHero?: boolean;
+}
+
+const { title, description, overHero = false } = Astro.props;
+const profile = await getProfile();
+const nav = await getNav();
+
+const fullName = `Prof. ${profile.name}`;
+const pageTitle = title ? `${title} · ${fullName}` : `${fullName} · ${profile.role}`;
+const metaDescription =
+  description ??
+  `${fullName}, ${profile.role} at the University of Ibadan. Research on Drosophila models of toxicity, Parkinson's disease, cancer and phytochemical protection.`;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const ogImage = new URL(profile.portrait ?? '/images/profile/abolaji-portrait.jpg', Astro.site);
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+
+const personLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: profile.name,
+  honorificPrefix: 'Prof.',
+  jobTitle: profile.role,
+  affiliation: [
+    { '@type': 'CollegeOrUniversity', name: 'University of Ibadan' },
+    { '@type': 'Organization', name: 'Drosophila Research and Training Centre', url: profile.links.lab ?? undefined },
+  ],
+  alumniOf: ['Obafemi Awolowo University', 'University of Lagos', 'University of Calabar'],
+  email: profile.emails[0] ? `mailto:${profile.emails[0]}` : undefined,
+  image: ogImage.href,
+  url: new URL('/', Astro.site).href,
+  sameAs: [
+    profile.links.scholar,
+    profile.links.orcid ? `https://orcid.org/${profile.links.orcid}` : null,
+    profile.links.researchgate,
+    profile.links.linkedin,
+  ].filter(Boolean),
+  knowsAbout: ['Molecular toxicology', 'Oxidative stress', 'Drosophila melanogaster', "Parkinson's disease", 'Cancer models', 'Phytochemicals'],
+};
+---
+
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={metaDescription} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta name="theme-color" content="#c49a55" />
+    <meta property="og:type" content="profile" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={metaDescription} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script type="application/ld+json" set:html={JSON.stringify(personLd)} />
+  </head>
+  <body class="min-h-dvh flex flex-col">
+    <a
+      href="#main"
+      class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:bg-cuticle focus:text-bone focus:px-4 focus:py-2 focus:rounded"
+      >Skip to content</a
+    >
+
+    <header
+      id="site-header"
+      data-over-hero={overHero ? '' : undefined}
+      class="fixed inset-x-0 top-0 z-50 transition-[background-color,box-shadow] duration-300"
+    >
+      <div class="wrap flex h-16 items-center justify-between gap-6">
+        <a href="/" class="font-display text-xl tracking-tight no-underline" aria-label="Home">
+          A. O. Abolaji
+        </a>
+        <nav aria-label="Main" class="hidden md:block">
+          <ul class="flex items-center gap-7 text-[0.95rem] font-medium">
+            {
+              nav.map((item) => (
+                <li>
+                  <a
+                    href={item.href}
+                    class="nav-link py-2"
+                    aria-current={path === item.href ? 'page' : undefined}
+                  >
+                    {item.label}
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </nav>
+        <button
+          id="menu-btn"
+          class="md:hidden -mr-2 inline-flex h-11 w-11 items-center justify-center rounded-full"
+          aria-expanded="false"
+          aria-controls="mobile-menu"
+        >
+          <span class="sr-only">Menu</span>
+          <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true" class="menu-icon">
+            <path d="M3 7h16M3 15h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+          </svg>
+        </button>
+      </div>
+      <div id="mobile-menu" class="md:hidden hidden border-t border-ink/10 bg-slide">
+        <ul class="wrap py-4 text-lg">
+          {
+            nav.map((item) => (
+              <li>
+                <a href={item.href} class="block py-3" aria-current={path === item.href ? 'page' : undefined}>
+                  {item.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </header>
+
+    <main id="main" class="flex-1">
+      <slot />
+    </main>
+
+    <Footer />
+
+    <style>
+      #site-header:not([data-over-hero]),
+      #site-header.is-scrolled {
+        background: color-mix(in oklab, var(--color-slide) 88%, transparent);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 1px 0 color-mix(in oklab, var(--color-ink) 10%, transparent);
+      }
+      #site-header[data-dark].is-scrolled,
+      #site-header[data-dark]:not([data-over-hero]) {
+        background: color-mix(in oklab, var(--color-cuticle) 90%, transparent);
+        color: var(--color-bone);
+        box-shadow: 0 1px 0 color-mix(in oklab, var(--color-bone) 10%, transparent);
+      }
+      #site-header[data-dark] #mobile-menu {
+        background: var(--color-cuticle);
+      }
+      .nav-link {
+        position: relative;
+      }
+      .nav-link::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0.15rem;
+        height: 1.5px;
+        background: currentColor;
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 0.3s var(--ease-out-soft);
+      }
+      .nav-link:hover::after,
+      .nav-link[aria-current='page']::after {
+        transform: scaleX(1);
+      }
+    </style>
+
+    <script>
+      const header = document.getElementById('site-header')!;
+      const onScroll = () => header.classList.toggle('is-scrolled', window.scrollY > 24);
+      onScroll();
+      window.addEventListener('scroll', onScroll, { passive: true });
+
+      // Switch the header to its dark style while a dark section sits underneath it.
+      const darkUnder = new Set<Element>();
+      const io = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((e) => (e.isIntersecting ? darkUnder.add(e.target) : darkUnder.delete(e.target)));
+          header.toggleAttribute('data-dark', darkUnder.size > 0);
+        },
+        { rootMargin: '0px 0px -92% 0px' },
+      );
+      document.querySelectorAll('main .on-dark, footer.on-dark').forEach((el) => io.observe(el));
+
+      const btn = document.getElementById('menu-btn')!;
+      const menu = document.getElementById('mobile-menu')!;
+      const setOpen = (open: boolean) => {
+        btn.setAttribute('aria-expanded', String(open));
+        menu.classList.toggle('hidden', !open);
+        header.classList.toggle('is-scrolled', open || window.scrollY > 24);
+      };
+      btn.addEventListener('click', () => setOpen(btn.getAttribute('aria-expanded') !== 'true'));
+      document.addEventListener('keydown', (e) => e.key === 'Escape' && setOpen(false));
+      menu.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => setOpen(false)));
+    </script>
+
+    <script>
+      // Smooth, weighted scrolling — skipped entirely for people who prefer reduced motion.
+      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        import('lenis').then(({ default: Lenis }) => {
+          const lenis = new Lenis({ lerp: 0.12, anchors: { offset: -72 } });
+          const raf = (t: number) => {
+            lenis.raf(t);
+            requestAnimationFrame(raf);
+          };
+          requestAnimationFrame(raf);
+        });
+      }
+    </script>
+  </body>
+</html>

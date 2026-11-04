@@ -1,0 +1,158 @@
+---
+import Base from '../layouts/Base.astro';
+import Hero from '../components/Hero.astro';
+import RoughEye from '../components/RoughEye.astro';
+import NetworkMap from '../components/NetworkMap.astro';
+import { getProfile, getThemes, getPublications, getNews, getProjects, pubHref } from '../lib/content';
+
+const profile = await getProfile();
+const themes = await getThemes();
+const featured = (await getPublications()).filter((p) => p.featured).slice(0, 6);
+const news = (await getNews()).slice(0, 3);
+const projects = (await getProjects()).filter((p) => p.highlight).slice(0, 3);
+const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+---
+
+<Base overHero>
+  <Hero />
+
+  <section class="wrap grid gap-10 py-24 md:grid-cols-12 md:py-32" aria-labelledby="intro">
+    <h2 id="intro" class="text-2xl md:col-span-5 md:text-3xl">
+      A fly lab in Ibadan with partners on five continents
+    </h2>
+    <div class="prose-serif md:col-span-7">
+      <p>
+        In 2014 Prof. Abolaji set up the first Drosophila laboratory in the Department of Biochemistry at the University
+        of Ibadan. The fruit fly shares most of its disease genes with people, breeds in days and costs little to keep,
+        which makes it a powerful way to do world-class biomedical research where resources are tight.
+      </p>
+      <p>
+        His group uses it to trace how environmental chemicals and drugs damage cells, and to test plant compounds that
+        protect against that damage. The work has trained researchers from {profile.metrics.institutionsTrained} Nigerian
+        institutions and more than {profile.metrics.trainees} students.
+      </p>
+      <p class="mt-6 font-sans text-base"><a href="/about" class="link font-medium">Read his full biography</a></p>
+    </div>
+  </section>
+
+  <RoughEye />
+
+  <section class="wrap py-24 md:py-32" aria-labelledby="themes-h">
+    <div class="grid gap-6 md:grid-cols-12">
+      <h2 id="themes-h" class="text-2xl md:col-span-5 md:text-3xl">Research themes</h2>
+      <p class="max-w-xl text-mute md:col-span-7">
+        Six lines of work, all built on the same question: how does a chemical exposure become a disease, and can it be
+        stopped?
+      </p>
+    </div>
+    <ul class="mt-14 grid gap-x-12 md:grid-cols-2">
+      {
+        themes.map((t) => (
+          <li class="border-t border-ink/15 py-7">
+            <h3 class="flex items-baseline gap-3 font-display text-xl">
+              <span class="hex text-ochre-deep" aria-hidden="true" />
+              {t.title}
+            </h3>
+            <p class="mt-3 max-w-prose text-mute">{t.summary}</p>
+          </li>
+        ))
+      }
+    </ul>
+    <p class="mt-8"><a href="/research" class="btn btn-ink">Explore the research</a></p>
+  </section>
+
+  {
+    featured.length > 0 && (
+      <section class="bg-slide-2/60 py-24 md:py-32" aria-labelledby="pubs-h">
+        <div class="wrap">
+          <div class="flex flex-wrap items-end justify-between gap-6">
+            <h2 id="pubs-h" class="text-2xl md:text-3xl">Selected publications</h2>
+            <a href="/research#publications" class="link font-medium">
+              All {profile.metrics.publications} publications
+            </a>
+          </div>
+          <ol class="mt-12 grid gap-x-12 gap-y-10 md:grid-cols-2 lg:grid-cols-3">
+            {featured.map((p) => (
+              <li class="flex flex-col border-t-2 border-cuticle pt-5">
+                <p class="text-sm text-mute">
+                  <em>{p.journal}</em>, {p.year}
+                </p>
+                <h3 class="mt-3 font-display text-lg leading-snug">
+                  <a href={pubHref(p)} class="link" rel="noopener">
+                    {p.title}
+                  </a>
+                </h3>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+    )
+  }
+
+  <section class="on-dark bg-cuticle py-24 text-bone md:py-32" aria-labelledby="net-h">
+    <div class="wrap grid gap-12 lg:grid-cols-12">
+      <div class="lg:col-span-4">
+        <h2 id="net-h" class="text-2xl md:text-3xl">Where the work happens</h2>
+        <p class="mt-4 text-bone-mute">
+          Training in Ile-Ife, Lagos, Calabar, Karachi and Santa Maria. Partnerships today with Glasgow, Harvard,
+          Oxford and the ICGEB in Trieste.
+        </p>
+        {
+          projects.length > 0 && (
+            <ul class="mt-8 space-y-5">
+              {projects.map((pr) => (
+                <li>
+                  <p class="font-display text-lg leading-snug">{pr.title}</p>
+                  <p class="mt-1 text-sm text-bone-mute">
+                    {pr.funder}, {pr.start}
+                    {pr.end ? `–${pr.end}` : ''}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )
+        }
+        <p class="mt-8"><a href="/research#network" class="link font-medium">See collaborators and institutions</a></p>
+      </div>
+      <div class="lg:col-span-8">
+        <NetworkMap />
+      </div>
+    </div>
+  </section>
+
+  {
+    news.length > 0 && (
+      <section class="wrap py-24" aria-labelledby="news-h">
+        <h2 id="news-h" class="text-2xl md:text-3xl">News</h2>
+        <ul class="mt-10 grid gap-10 md:grid-cols-3">
+          {news.map((n) => (
+            <li class="border-t border-ink/15 pt-5">
+              <time datetime={n.date ?? ''} class="text-sm text-mute">
+                {n.date && fmtDate(n.date)}
+              </time>
+              <h3 class="mt-2 font-display text-lg">
+                {n.link ? <a class="link" href={n.link}>{n.title}</a> : n.title}
+              </h3>
+              {n.summary && <p class="mt-2 text-mute">{n.summary}</p>}
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
+  <section class="bg-ochre py-20 text-cuticle md:py-28" aria-labelledby="cta-h">
+    <div class="wrap grid items-end gap-8 md:grid-cols-12">
+      <div class="md:col-span-8">
+        <h2 id="cta-h" class="text-2xl md:text-4xl">Collaborations, postgraduate study and speaking invitations</h2>
+        <p class="mt-4 max-w-xl text-cuticle/80">
+          Prospective students and research partners are welcome to get in touch.
+        </p>
+      </div>
+      <div class="md:col-span-4 md:text-right">
+        <a href="/contact" class="btn btn-ink">Contact Prof. Abolaji</a>
+      </div>
+    </div>
+  </section>
+</Base>
