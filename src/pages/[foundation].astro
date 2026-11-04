@@ -1,0 +1,23 @@
+---
+/** The Foundation page only exists once it is marked "published" in the CMS. */
+import Base from '../layouts/Base.astro';
+import { getFoundation, paragraphs } from '../lib/content';
+
+export async function getStaticPaths() {
+  const f = await getFoundation();
+  return f?.published ? [{ params: { foundation: 'foundation' } }] : [];
+}
+const f = (await getFoundation())!;
+---
+
+<Base title={f.name || 'Foundation'} description={f.summary}>
+  <section class="bg-ochre pt-32 pb-16 text-cuticle md:pt-40 md:pb-20">
+    <div class="wrap">
+      <h1 class="text-4xl md:text-[5.5rem] md:leading-[0.95]">{f.name || 'Foundation'}</h1>
+      {f.summary && <p class="mt-6 max-w-2xl text-lg">{f.summary}</p>}
+    </div>
+  </section>
+  <section class="wrap py-20 md:py-28">
+    <div class="prose-serif">{paragraphs(f.body).map((para) => <p>{para}</p>)}</div>
+  </section>
+</Base>

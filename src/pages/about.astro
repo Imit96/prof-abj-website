@@ -1,0 +1,178 @@
+---
+import Base from '../layouts/Base.astro';
+import { getProfile, getCareer, paragraphs } from '../lib/content';
+
+const p = await getProfile();
+const c = await getCareer();
+const bio = paragraphs(p.bio);
+const span = (start: number | null, end: string | null) =>
+  start ? (end ? (end === String(start) ? `${start}` : `${start}–${end}`) : `${start}–present`) : end ?? '';
+---
+
+<Base title="About" description={`Biography, career and honours of Prof. ${p.name}, ${p.role} at the University of Ibadan.`}>
+  <section class="pt-28 text-cuticle md:pt-36" style="background:radial-gradient(90% 110% at 78% 60%, #cfa769 0%, #c49a55 45%, #a97b3e 100%)">
+    <div class="wrap grid items-end gap-10 md:grid-cols-12">
+      <div class="pb-14 md:col-span-7 md:pb-20">
+        <h1 class="text-4xl md:text-[5.5rem] md:leading-[0.95]">About</h1>
+        <p class="mt-6 max-w-xl text-lg leading-snug">{p.role}</p>
+        <p class="mt-2 max-w-xl whitespace-pre-line text-cuticle/80">{p.department}</p>
+      </div>
+      <div class="relative md:col-span-5">
+        <img
+          src={p.portrait ?? ''}
+          alt={`Portrait of Prof. ${p.name}`}
+          width="864"
+          height="1080"
+          class="about-portrait mx-auto h-[52svh] w-auto object-contain object-bottom md:h-[64svh]"
+        />
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap grid gap-12 py-20 md:grid-cols-12 md:py-28" aria-labelledby="bio-h">
+    <h2 id="bio-h" class="text-2xl md:col-span-4 md:text-3xl">Biography</h2>
+    <div class="prose-serif md:col-span-8">
+      {bio.map((para) => <p>{para}</p>)}
+      {
+        p.cv && (
+          <p class="mt-10 font-sans text-base">
+            <a href={p.cv} class="btn btn-ink" download>
+              Download full CV{p.cvUpdated ? ` (${p.cvUpdated})` : ''}
+            </a>
+          </p>
+        )
+      }
+    </div>
+  </section>
+
+  <section class="bg-slide-2/60 py-20 md:py-28" aria-labelledby="career-h">
+    <div class="wrap grid gap-12 md:grid-cols-12">
+      <div class="md:col-span-4">
+        <h2 id="career-h" class="text-2xl md:text-3xl">Career</h2>
+        <p class="mt-4 max-w-xs text-mute">From Covenant University to a professorship at Ibadan, with fellowships in Pakistan, Brazil and the UK.</p>
+      </div>
+      <ol class="md:col-span-8">
+        {
+          c.appointments.map((a) => (
+            <li class="grid gap-1 border-t border-ink/15 py-5 sm:grid-cols-[9rem_1fr] sm:gap-6">
+              <span class="tabular-nums text-mute">{span(a.start, a.end)}</span>
+              <div>
+                <p class="font-medium">{a.role}</p>
+                <p class="text-mute">{a.organisation}</p>
+              </div>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+  </section>
+
+  <section class="wrap grid gap-12 py-20 md:grid-cols-12 md:py-28" aria-labelledby="edu-h">
+    <h2 id="edu-h" class="text-2xl md:col-span-4 md:text-3xl">Education</h2>
+    <ol class="md:col-span-8">
+      {
+        c.education.map((e) => (
+          <li class="grid gap-1 border-t border-ink/15 py-5 sm:grid-cols-[9rem_1fr] sm:gap-6">
+            <span class="tabular-nums text-mute">{e.year}</span>
+            <div>
+              <p class="font-medium">
+                {e.degree}, {e.field}
+              </p>
+              <p class="text-mute">{e.institution}</p>
+              {e.note && <p class="mt-2 max-w-prose text-[0.95rem] text-mute">{e.note}</p>}
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+  </section>
+
+  <section class="on-dark bg-cuticle py-20 text-bone md:py-28" aria-labelledby="honours-h">
+    <div class="wrap grid gap-16 lg:grid-cols-2">
+      <div>
+        <h2 id="honours-h" class="text-2xl md:text-3xl">Honours and fellowships</h2>
+        <ul class="mt-8">
+          {
+            c.honours.map((h) => (
+              <li class="border-t border-bone/15 py-5">
+                <p class="font-display text-lg">{h.title}</p>
+                <p class="mt-1 text-bone-mute">
+                  {h.body}, {h.year}
+                </p>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+      <div class="space-y-16">
+        <div>
+          <h2 class="text-2xl md:text-3xl">Learned societies</h2>
+          <ul class="mt-8 space-y-3">
+            {
+              c.memberships.map((m) => (
+                <li class="flex items-baseline gap-3">
+                  <span class="hex text-ochre-light" aria-hidden="true" />
+                  {m}
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+        <div>
+          <h2 class="text-2xl md:text-3xl">Editorial and review service</h2>
+          <ul class="mt-8">
+            {
+              c.service.map((s) => (
+                <li class="border-t border-bone/15 py-4">
+                  <span class="font-medium">{s.role}</span>
+                  <span class="text-bone-mute">, {s.organisation}</span>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap grid gap-12 py-20 md:grid-cols-12 md:py-28" aria-labelledby="teach-h">
+    <div class="md:col-span-4">
+      <h2 id="teach-h" class="text-2xl md:text-3xl">Teaching and supervision</h2>
+    </div>
+    <div class="md:col-span-8">
+      <p class="prose-serif">{c.teaching}</p>
+    </div>
+  </section>
+
+  {
+    c.talks.length > 0 && (
+      <section class="bg-slide-2/60 py-20 md:py-28" aria-labelledby="talks-h">
+        <div class="wrap grid gap-12 md:grid-cols-12">
+          <h2 id="talks-h" class="text-2xl md:col-span-4 md:text-3xl">Selected invited talks</h2>
+          <ol class="md:col-span-8">
+            {c.talks.map((t) => (
+              <li class="grid gap-1 border-t border-ink/15 py-5 sm:grid-cols-[5rem_1fr] sm:gap-6">
+                <span class="tabular-nums text-mute">{t.year}</span>
+                <div>
+                  <p class="font-display text-lg leading-snug">{t.title}</p>
+                  <p class="mt-1 text-mute">{t.event}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+    )
+  }
+</Base>
+
+<style>
+  .about-portrait {
+    -webkit-mask-image: linear-gradient(to right, transparent 2%, #000 28%, #000 74%, transparent 98%),
+      linear-gradient(to bottom, transparent 0%, #000 22%);
+    -webkit-mask-composite: source-in;
+    mask-image: linear-gradient(to right, transparent 2%, #000 28%, #000 74%, transparent 98%),
+      linear-gradient(to bottom, transparent 0%, #000 22%);
+    mask-composite: intersect;
+  }
+</style>

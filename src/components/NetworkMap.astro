@@ -1,0 +1,178 @@
+---
+import { geoNaturalEarth1, geoPath, geoInterpolate } from 'd3-geo';
+import { feature } from 'topojson-client';
+import land110 from 'world-atlas/land-110m.json';
+import { getPlaces } from '../lib/content';
+
+const places = (await getPlaces()).filter((p) => typeof p.lat === 'number' && typeof p.lng === 'number');
+const W = 1000;
+const H = 520;
+const projection = geoNaturalEarth1()
+  .rotate([-10, 0])
+  .fitExtent(
+    [
+      [10, 10],
+      [W - 10, H - 10],
+    ],
+    { type: 'Sphere' },
+  );
+const path = geoPath(projection);
+// @ts-ignore topojson typing
+const land = feature(land110, land110.objects.land);
+const landD = path(land as any) ?? '';
+const sphereD = path({ type: 'Sphere' }) ?? '';
+
+const home = places.find((p) => p.slug === 'university-of-ibadan') ?? places[0];
+const homeLL: [number, number] = [home.lng!, home.lat!];
+
+/** Great-circle arcs, lifted a little so they read as connections rather than borders */
+const arcs = places
+  .filter((p) => p !== home)
+  .map((p) => {
+    const to: [number, number] = [p.lng!, p.lat!];
+    const interp = geoInterpolate(homeLL, to);
+    const pts = Array.from({ length: 48 }, (_, i) => projection(interp(i / 47))!);
+    const [x0, y0] = pts[0];
+    const [x1, y1] = pts[pts.length - 1];
+    const dist = Math.hypot(x1 - x0, y1 - y0);
+    if (dist < 18) return null; // Nigerian sites sit on top of Ibadan at this scale
+    const lift = Math.min(90, dist * 0.22);
+    const d = pts
+      .map(([x, y], i) => {
+        const t = i / (pts.length - 1);
+        return `${i ? 'L' : 'M'}${x.toFixed(1)},${(y - Math.sin(Math.PI * t) * lift).toFixed(1)}`;
+      })
+      .join('');
+    return { d, relation: p.relation, len: Math.round(dist * 1.5) };
+  })
+  .filter(Boolean) as { d: string; relation: string; len: number }[];
+
+const dots = places.map((p) => {
+  const [x, y] = projection([p.lng!, p.lat!])!;
+  return { x, y, ...p };
+});
+const abroad = dots.filter((d) => d.country !== 'Nigeria');
+const nigeria = dots.filter((d) => d.country === 'Nigeria');
+const [hx, hy] = projection(homeLL)!;
+
+const relationLabel: Record<string, string> = {
+  current: 'Works here now',
+  past: 'Worked or trained here',
+  partner: 'Research partner',
+  funder: 'Funder',
+};
+---
+
+<figure class="network">
+  <svg viewBox={`0 0 ${W} ${H}`} class="h-auto w-full" role="img" aria-labelledby="map-title map-desc">
+    <title id="map-title">Map of Prof. Abolaji's institutional network</title>
+    <desc id="map-desc">
+      Lines connect the University of Ibadan to {abroad.map((d) => `${d.name} (${d.city}, ${d.country})`).join(', ')}.
+    </desc>
+    <path d={sphereD} fill="none" stroke="currentColor" stroke-opacity="0.12"></path>
+    <path d={landD} fill="currentColor" fill-opacity="0.09" stroke="currentColor" stroke-opacity="0.18" stroke-width="0.6"></path>
+    <g class="arcs" fill="none" stroke-linecap="round">
+      {
+        arcs.map((a, i) => (
+          <path
+            d={a.d}
+            class={`arc arc-${a.relation}`}
+            style={`--len:${a.len};--i:${i}`}
+            stroke-dasharray={a.relation === 'past' ? '3 5' : undefined}
+          />
+        ))
+      }
+    </g>
+    <g>
+      {
+        abroad.map((d) => (
+          <g class="pin" transform={`translate(${d.x.toFixed(1)},${d.y.toFixed(1)})`}>
+            {d.relation === 'past' ? (
+              <circle r="4.5" fill="var(--color-cuticle)" stroke="var(--color-ochre-light)" stroke-width="1.6" />
+            ) : d.relation === 'funder' ? (
+              <rect x="-4" y="-4" width="8" height="8" transform="rotate(45)" fill="var(--color-bone-mute)" />
+            ) : (
+              <circle r="4.5" fill="var(--color-ochre-light)" />
+            )}
+          </g>
+        ))
+      }
+      <g transform={`translate(${hx.toFixed(1)},${hy.toFixed(1)})`}>
+        <circle r="14" fill="var(--color-eye-bright)" fill-opacity="0.18" class="pulse"></circle>
+        <path d="M0,-8 6.9,-4 6.9,4 0,8 -6.9,4 -6.9,-4Z" fill="var(--color-eye-bright)"></path>
+      </g>
+    </g>
+  </svg>
+  <figcaption class="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm text-bone-mute">
+    <span class="inline-flex items-center gap-2"><span class="hex text-eye-bright"></span>Ibadan, Nigeria ({nigeria.length} Nigerian institutions)</span>
+    <span class="inline-flex items-center gap-2"><span class="inline-block h-2.5 w-2.5 rounded-full bg-ochre-light"></span>Current role or research partner</span>
+    <span class="inline-flex items-center gap-2"><span class="inline-block h-2.5 w-2.5 rounded-full border-[1.6px] border-ochre-light"></span>{relationLabel.past}</span>
+    <span class="inline-flex items-center gap-2"><span class="inline-block h-2 w-2 rotate-45 bg-bone-mute"></span>{relationLabel.funder}</span>
+  </figcaption>
+</figure>
+
+<style>
+  .network {
+    color: var(--color-bone);
+  }
+  .arc {
+    stroke-width: 1.4;
+    stroke: var(--color-ochre-light);
+    stroke-opacity: 0.85;
+  }
+  .arc-funder {
+    stroke: var(--color-bone-mute);
+    stroke-opacity: 0.6;
+  }
+  .arc-past {
+    stroke-opacity: 0.6;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .network:not(.is-drawn) .arc:not(.arc-past) {
+      stroke-dasharray: calc(var(--len) * 1px);
+      stroke-dashoffset: calc(var(--len) * 1px);
+    }
+    .network:not(.is-drawn) .arc-past {
+      opacity: 0;
+    }
+    .network .arc {
+      transition:
+        stroke-dashoffset 1.6s var(--ease-out-soft),
+        opacity 1s;
+      transition-delay: calc(var(--i) * 90ms);
+    }
+    .network.is-drawn .arc:not(.arc-past) {
+      stroke-dasharray: calc(var(--len) * 1px);
+      stroke-dashoffset: 0;
+    }
+    .pulse {
+      animation: pulse 2.8s ease-out infinite;
+      transform-origin: center;
+      transform-box: fill-box;
+    }
+    @keyframes pulse {
+      0% {
+        transform: scale(0.6);
+        opacity: 0.9;
+      }
+      100% {
+        transform: scale(2.2);
+        opacity: 0;
+      }
+    }
+  }
+</style>
+
+<script>
+  document.querySelectorAll('.network').forEach((el) => {
+    new IntersectionObserver(
+      ([e], obs) => {
+        if (e.isIntersecting) {
+          el.classList.add('is-drawn');
+          obs.disconnect();
+        }
+      },
+      { threshold: 0.35 },
+    ).observe(el);
+  });
+</script>

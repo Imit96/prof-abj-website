@@ -1,0 +1,40 @@
+---
+import Base from '../layouts/Base.astro';
+import { getGallery } from '../lib/content';
+const items = await getGallery();
+const labels: Record<string, string> = { lab: 'Laboratory', training: 'Workshops and training', conference: 'Conferences and talks', team: 'Students and team', other: 'Other' };
+const cats = Object.keys(labels).filter((k) => items.some((i) => i.category === k));
+---
+
+<Base title="Gallery" description="Photographs from the Drosophila laboratory, training workshops and conferences.">
+  <section class="on-dark bg-cuticle pt-32 pb-16 text-bone md:pt-40">
+    <div class="wrap">
+      <h1 class="text-4xl md:text-[5.5rem] md:leading-[0.95]">Gallery</h1>
+      <p class="mt-6 max-w-xl text-lg text-bone/85">The laboratory, workshops, conferences and the people who make the work happen.</p>
+    </div>
+  </section>
+  <section class="wrap py-16 md:py-24">
+    {items.length === 0 ? (
+      <p class="max-w-md text-mute">No photos have been added yet.</p>
+    ) : (
+      cats.map((cat) => (
+        <div class="mb-20">
+          <h2 class="text-2xl">{labels[cat]}</h2>
+          <ul class="mt-8 columns-1 gap-6 sm:columns-2 lg:columns-3">
+            {items.filter((i) => i.category === cat).map((i) => (
+              <li class="mb-6 break-inside-avoid">
+                <figure>
+                  <img src={i.image} alt={i.alt || i.title} loading="lazy" decoding="async" class="w-full rounded-lg" />
+                  <figcaption class="mt-2 text-[0.95rem]">
+                    {i.title}
+                    {i.date && <span class="text-mute">, {new Date(i.date).getFullYear()}</span>}
+                  </figcaption>
+                </figure>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))
+    )}
+  </section>
+</Base>
