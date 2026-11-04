@@ -6,9 +6,11 @@ import { getGallery } from '../lib/content';
 
 const items = await getGallery();
 // Every uploaded photo is imported here so Astro can resize it (AVIF/WebP, several widths) at build time.
-const files = import.meta.glob<{ default: ImageMetadata }>('../assets/gallery/*.{jpg,jpeg,png,webp,avif,JPG,JPEG,PNG}', { eager: true });
-const byName = new Map(Object.entries(files).map(([path, mod]) => [path.split('/').pop()!, mod.default]));
-const resolve = (src: string | null) => (src ? byName.get(src.split('/').pop()!) : undefined);
+const files = import.meta.glob<{ default: ImageMetadata }>('../assets/gallery/**/*.{jpg,jpeg,png,webp,avif,JPG,JPEG,PNG}', { eager: true });
+// Keystatic saves each photo as <entry>/image.<ext>, so match on the path below the gallery folder, not the filename.
+const below = (p: string) => p.split('/gallery/').pop() ?? p;
+const byPath = new Map(Object.entries(files).map(([path, mod]) => [below(path), mod.default]));
+const resolve = (src: string | null) => (src ? byPath.get(below(src)) : undefined);
 
 const labels: Record<string, string> = { lab: 'Laboratory', training: 'Workshops and training', conference: 'Conferences and talks', team: 'Students and team', other: 'Other' };
 const cats = Object.keys(labels).filter((k) => items.some((i) => i.category === k));
